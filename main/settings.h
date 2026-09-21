@@ -12,7 +12,7 @@
 
 // Fixed product name displayed in the System information panel.
 #define SETTINGS_SYSTEM_DEVICE_NAME "AirPlay and DLNA Receiver"
-#define SETTINGS_SCHEMA_VERSION 4
+#define SETTINGS_SCHEMA_VERSION     4
 
 /**
  * Initialize settings module (call once at startup)
@@ -177,7 +177,8 @@ typedef struct {
   bool speaker_protection_enabled;
   uint8_t speaker_threshold_percent; /* 50..98 % of full scale */
   bool scheduled_restart_enabled;
-  uint16_t scheduled_restart_hours; /* uptime interval; restart waits for idle */
+  uint16_t
+      scheduled_restart_hours; /* uptime interval; restart waits for idle */
   settings_theme_t theme;
 } settings_maintenance_t;
 
@@ -186,10 +187,10 @@ esp_err_t settings_set_maintenance(const settings_maintenance_t *config);
 
 // ---- MQTT / Home Assistant ----
 
-#define SETTINGS_MQTT_URI_LEN 128
-#define SETTINGS_MQTT_USER_LEN 64
+#define SETTINGS_MQTT_URI_LEN      128
+#define SETTINGS_MQTT_USER_LEN     64
 #define SETTINGS_MQTT_PASSWORD_LEN 96
-#define SETTINGS_MQTT_TOPIC_LEN 96
+#define SETTINGS_MQTT_TOPIC_LEN    96
 
 typedef struct {
   bool enabled;
@@ -208,9 +209,9 @@ esp_err_t settings_factory_reset(void);
 
 // ---- Internet-radio presets ----
 
-#define SETTINGS_RADIO_PRESET_COUNT 8
+#define SETTINGS_RADIO_PRESET_COUNT    8
 #define SETTINGS_RADIO_PRESET_NAME_LEN 32
-#define SETTINGS_RADIO_PRESET_URL_LEN 256
+#define SETTINGS_RADIO_PRESET_URL_LEN  256
 
 typedef struct {
   char name[SETTINGS_RADIO_PRESET_NAME_LEN];

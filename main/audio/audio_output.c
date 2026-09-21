@@ -240,7 +240,8 @@ esp_err_t audio_output_write_pcm_transition(int16_t *data, size_t frames,
   software_dsp_process(data, frames, 2);
   if ((fade_in || fade_out) && frames > 0) {
     size_t fade_frames = output_rate_hz / 100;
-    if (fade_frames > frames) fade_frames = frames;
+    if (fade_frames > frames)
+      fade_frames = frames;
     if (fade_frames < 2) {
       data[0] = 0;
       data[1] = 0;
@@ -253,10 +254,10 @@ esp_err_t audio_output_write_pcm_transition(int16_t *data, size_t frames,
         if (fade_out && i >= frames - fade_frames) {
           int32_t out_gain =
               (int32_t)(((frames - 1 - i) * 32767u) / (fade_frames - 1));
-          if (out_gain < gain_q15) gain_q15 = out_gain;
+          if (out_gain < gain_q15)
+            gain_q15 = out_gain;
         }
-        data[i * 2] =
-            (int16_t)(((int32_t)data[i * 2] * gain_q15) >> 15);
+        data[i * 2] = (int16_t)(((int32_t)data[i * 2] * gain_q15) >> 15);
         data[i * 2 + 1] =
             (int16_t)(((int32_t)data[i * 2 + 1] * gain_q15) >> 15);
       }

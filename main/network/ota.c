@@ -26,8 +26,8 @@ static esp_err_t validate_written_partition(const esp_partition_t *partition) {
              uploaded.project_name, running->project_name);
     return ESP_ERR_INVALID_ARG;
   }
-  ESP_LOGI(TAG, "Validated application %s version %s",
-           uploaded.project_name, uploaded.version);
+  ESP_LOGI(TAG, "Validated application %s version %s", uploaded.project_name,
+           uploaded.version);
   return ESP_OK;
 }
 
@@ -151,7 +151,8 @@ static esp_err_t ota_buffered(httpd_req_t *req) {
   }
 
   err = validate_written_partition(ota_partition);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
 
   if (esp_ota_set_boot_partition(ota_partition) != ESP_OK) {
     ESP_LOGE(TAG, "Failed to set boot partition");
@@ -209,9 +210,9 @@ static esp_err_t ota_streaming(httpd_req_t *req) {
     return ESP_FAIL;
   }
 
-
   err = validate_written_partition(ota_partition);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
 
   if (esp_ota_set_boot_partition(ota_partition) != ESP_OK) {
     ESP_LOGE(TAG, "Failed to set boot partition");

@@ -16,7 +16,9 @@ typedef struct {
 
 static source_slot_t s_slots[SOURCE_MANAGER_SPOTIFY + 1];
 
-static int priority(source_manager_source_t source) { return (int)source; }
+static int priority(source_manager_source_t source) {
+  return (int)source;
+}
 
 esp_err_t source_manager_init(void) {
   if (!s_lock) {
@@ -95,16 +97,25 @@ source_manager_source_t source_manager_current(void) {
   return value;
 }
 
-uint32_t source_manager_switch_count(void) { return s_switches; }
+uint32_t source_manager_switch_count(void) {
+  return s_switches;
+}
 
 const char *source_manager_name(source_manager_source_t source) {
   switch (source) {
-  case SOURCE_MANAGER_RADIO: return "radio";
-  case SOURCE_MANAGER_SQUEEZELITE: return "squeezelite";
-  case SOURCE_MANAGER_SNAPCAST: return "snapcast";
-  case SOURCE_MANAGER_DLNA: return "dlna";
-  case SOURCE_MANAGER_AIRPLAY: return "airplay";
-  case SOURCE_MANAGER_SPOTIFY: return "spotify";
-  default: return "none";
+  case SOURCE_MANAGER_RADIO:
+    return "radio";
+  case SOURCE_MANAGER_SQUEEZELITE:
+    return "squeezelite";
+  case SOURCE_MANAGER_SNAPCAST:
+    return "snapcast";
+  case SOURCE_MANAGER_DLNA:
+    return "dlna";
+  case SOURCE_MANAGER_AIRPLAY:
+    return "airplay";
+  case SOURCE_MANAGER_SPOTIFY:
+    return "spotify";
+  default:
+    return "none";
   }
 }

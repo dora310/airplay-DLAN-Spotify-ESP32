@@ -86,9 +86,9 @@ LV_FONT_DECLARE(lv_font_international_16);
 // Hardware configuration
 // ============================================================================
 
-#define DISPLAY_WIDTH      CONFIG_DISPLAY_ST7789_WIDTH
-#define DISPLAY_HEIGHT     CONFIG_DISPLAY_ST7789_HEIGHT
-#define LCD_HOST           SPI2_HOST
+#define DISPLAY_WIDTH  CONFIG_DISPLAY_ST7789_WIDTH
+#define DISPLAY_HEIGHT CONFIG_DISPLAY_ST7789_HEIGHT
+#define LCD_HOST       SPI2_HOST
 /* The GMT020-02 breakout can remain blank at 40 MHz with Dupont leads.
  * Start at a conservative 10 MHz. This is still fast enough for the
  * now-playing interface and leaves substantial margin for wiring quality. */
@@ -124,26 +124,26 @@ LV_FONT_DECLARE(lv_font_international_16);
 #define TEXT_X       X_MARGIN
 #define TEXT_RIGHT   X_MARGIN
 #else
-#define X_MARGIN   22
-#define X_MARGIN_R (-22)
-#define Y_TITLE    10
-#define Y_ARTIST   44
-#define Y_ALBUM    69
+#define X_MARGIN     22
+#define X_MARGIN_R   (-22)
+#define Y_TITLE      10
+#define Y_ARTIST     44
+#define Y_ALBUM      69
 // Keep the status controls on-screen for both the original 320x170 ST7789
 // layout and the Waveshare 240x240 panel.
-#define Y_PROGRESS ((DISPLAY_HEIGHT >= 220) ? 148 : 114)
-#define Y_TIME     (Y_PROGRESS + 18)
-#define Y_STATUS   ((DISPLAY_HEIGHT >= 220) ? 188 : (DISPLAY_HEIGHT - 18))
-#define BAR_HEIGHT 12
+#define Y_PROGRESS   ((DISPLAY_HEIGHT >= 220) ? 148 : 114)
+#define Y_TIME       (Y_PROGRESS + 18)
+#define Y_STATUS     ((DISPLAY_HEIGHT >= 220) ? 188 : (DISPLAY_HEIGHT - 18))
+#define BAR_HEIGHT   12
 #define ARTWORK_SIZE 112
 #define ARTWORK_X    10
 #define ARTWORK_Y    10
 #ifdef CONFIG_ENABLE_AIRPLAY_ARTWORK
-#define TEXT_X       (ARTWORK_X + ARTWORK_SIZE + 20)
+#define TEXT_X (ARTWORK_X + ARTWORK_SIZE + 20)
 #else
-#define TEXT_X       X_MARGIN
+#define TEXT_X X_MARGIN
 #endif
-#define TEXT_RIGHT   X_MARGIN
+#define TEXT_RIGHT X_MARGIN
 #endif
 
 // ============================================================================
@@ -215,16 +215,16 @@ typedef struct {
 } display_palette_t;
 
 static const display_palette_t s_track_palettes[] = {
-    {3, 16, 38, 30, 144, 255},    // blue
-    {27, 12, 48, 191, 90, 242},   // purple
-    {4, 37, 39, 45, 212, 191},    // teal
-    {48, 10, 25, 255, 69, 100},   // rose
-    {49, 25, 7, 255, 159, 10},    // amber
-    {10, 24, 52, 94, 92, 230},    // indigo
-    {5, 39, 24, 48, 209, 88},     // green
-    {46, 13, 8, 255, 99, 72},     // coral
-    {9, 32, 48, 100, 210, 255},   // cyan
-    {37, 15, 37, 255, 55, 150},   // magenta
+    {3, 16, 38, 30, 144, 255},  // blue
+    {27, 12, 48, 191, 90, 242}, // purple
+    {4, 37, 39, 45, 212, 191},  // teal
+    {48, 10, 25, 255, 69, 100}, // rose
+    {49, 25, 7, 255, 159, 10},  // amber
+    {10, 24, 52, 94, 92, 230},  // indigo
+    {5, 39, 24, 48, 209, 88},   // green
+    {46, 13, 8, 255, 99, 72},   // coral
+    {9, 32, 48, 100, 210, 255}, // cyan
+    {37, 15, 37, 255, 55, 150}, // magenta
 };
 
 static uint32_t s_applied_theme_key = UINT32_MAX;
@@ -368,8 +368,8 @@ static void apply_track_theme(const char *title, const char *artist,
     if (key == 0) {
       key = 1;
     }
-    palette_index = key %
-                    (sizeof(s_track_palettes) / sizeof(s_track_palettes[0]));
+    palette_index =
+        key % (sizeof(s_track_palettes) / sizeof(s_track_palettes[0]));
   }
 
   if (key == s_applied_theme_key) {
@@ -378,10 +378,10 @@ static void apply_track_theme(const char *title, const char *artist,
   s_applied_theme_key = key;
 
   const display_palette_t *palette = &s_track_palettes[palette_index];
-  lv_color_t background = lv_color_make(palette->bg_r, palette->bg_g,
-                                        palette->bg_b);
-  lv_color_t accent = lv_color_make(palette->accent_r, palette->accent_g,
-                                    palette->accent_b);
+  lv_color_t background =
+      lv_color_make(palette->bg_r, palette->bg_g, palette->bg_b);
+  lv_color_t accent =
+      lv_color_make(palette->accent_r, palette->accent_g, palette->accent_b);
 
   if (s_theme_layer) {
     lv_obj_set_style_bg_color(s_theme_layer, background, 0);
@@ -443,13 +443,12 @@ static bool artwork_widget_set(uint8_t *rgb565, size_t data_size,
     scale = 1;
   }
   lv_image_set_scale(s_artwork_image, scale);
-  lv_obj_align(s_artwork_image, LV_ALIGN_TOP_LEFT,
-               ARTWORK_X + (ARTWORK_SIZE -
-                            (int32_t)((uint32_t)width * scale / 256U)) /
-                               2,
-               ARTWORK_Y + (ARTWORK_SIZE -
-                            (int32_t)((uint32_t)height * scale / 256U)) /
-                               2);
+  lv_obj_align(
+      s_artwork_image, LV_ALIGN_TOP_LEFT,
+      ARTWORK_X +
+          (ARTWORK_SIZE - (int32_t)((uint32_t)width * scale / 256U)) / 2,
+      ARTWORK_Y +
+          (ARTWORK_SIZE - (int32_t)((uint32_t)height * scale / 256U)) / 2);
   lv_obj_t *parent = lv_obj_get_parent(s_artwork_image);
   lv_obj_move_to_index(s_artwork_image, lv_obj_get_child_count(parent) - 1);
   lv_obj_add_flag(s_artwork_placeholder, LV_OBJ_FLAG_HIDDEN);
@@ -486,8 +485,8 @@ static void artwork_task(void *arg) {
     }
 
     artwork_rgb565_t decoded;
-    bool ok = artwork_decoder_decode_jpeg(
-        job.jpeg, job.jpeg_len, ARTWORK_DECODE_MAX_DIM, &decoded);
+    bool ok = artwork_decoder_decode_jpeg(job.jpeg, job.jpeg_len,
+                                          ARTWORK_DECODE_MAX_DIM, &decoded);
     heap_caps_free(job.jpeg);
 
     if (!ok) {
@@ -582,8 +581,8 @@ static void ui_create(void) {
   lv_obj_set_size(s_theme_layer, DISPLAY_WIDTH, DISPLAY_HEIGHT);
   lv_obj_align(s_theme_layer, LV_ALIGN_TOP_LEFT, 0, 0);
   lv_obj_set_style_bg_color(s_theme_layer, lv_color_make(3, 16, 38), 0);
-  lv_obj_set_style_bg_opa(s_theme_layer,
-                          s_bg_buf ? LV_OPA_90 : LV_OPA_COVER, 0);
+  lv_obj_set_style_bg_opa(s_theme_layer, s_bg_buf ? LV_OPA_90 : LV_OPA_COVER,
+                          0);
   lv_obj_clear_flag(s_theme_layer, LV_OBJ_FLAG_SCROLLABLE);
   lv_obj_clear_flag(s_theme_layer, LV_OBJ_FLAG_CLICKABLE);
 
@@ -869,9 +868,9 @@ static void ui_update(void) {
   if (clear_artwork) {
     artwork_widget_clear();
   }
-  if (pending_artwork && !artwork_widget_set(
-                             pending_artwork, pending_artwork_len,
-                             pending_artwork_width, pending_artwork_height)) {
+  if (pending_artwork &&
+      !artwork_widget_set(pending_artwork, pending_artwork_len,
+                          pending_artwork_width, pending_artwork_height)) {
     heap_caps_free(pending_artwork);
   }
 
@@ -885,8 +884,7 @@ static void ui_update(void) {
       lv_label_set_text(s_label_album, "Waiting for music...");
     } else if (dlna_active) {
       lv_label_set_text(s_label_title, "DLNA");
-      lv_label_set_text(s_label_artist,
-                        title[0] ? title : "Media selected");
+      lv_label_set_text(s_label_artist, title[0] ? title : "Media selected");
       lv_label_set_text(s_label_album,
                         artist[0] ? artist
                                   : (album[0] ? album : "Ready to play"));
@@ -908,12 +906,9 @@ static void ui_update(void) {
     // Metadata can arrive before RECORD/SETRATEANCHORTIME changes the state
     // to PLAYING. Render it immediately instead of hiding it behind the fixed
     // Connected/Ready message.
-    lv_label_set_text(s_label_title,
-                      title[0] ? title : "AirPlay Connected");
-    lv_label_set_text(s_label_artist,
-                      artist[0] ? artist : wifi_text);
-    lv_label_set_text(s_label_album,
-                      album[0] ? album : "Waiting for music...");
+    lv_label_set_text(s_label_title, title[0] ? title : "AirPlay Connected");
+    lv_label_set_text(s_label_artist, artist[0] ? artist : wifi_text);
+    lv_label_set_text(s_label_album, album[0] ? album : "Waiting for music...");
     if (sender[0]) {
       snprintf(connected_status, sizeof(connected_status), "%.24s | CONNECTED",
                sender);
@@ -931,43 +926,46 @@ static void ui_update(void) {
   case DISPLAY_STATE_PLAYING:
   case DISPLAY_STATE_PAUSED: {
     char playback_status[64];
-    bool airplay_waiting = !spotify_active && !dlna_active && title[0] == '\0' &&
-                           artist[0] == '\0' && album[0] == '\0' &&
-                           duration_secs == 0;
+    bool airplay_waiting = !spotify_active && !dlna_active &&
+                           title[0] == '\0' && artist[0] == '\0' &&
+                           album[0] == '\0' && duration_secs == 0;
 
-    lv_label_set_text(s_label_title,
-                      airplay_waiting
-                          ? "AirPlay Connected"
-                          : (title[0] ? title
-                               : (spotify_active
-                                      ? (state == DISPLAY_STATE_PAUSED
-                                             ? "Spotify Paused"
-                                             : "Spotify Playing")
-                               : (dlna_active
-                                      ? "DLNA"
-                                      : (state == DISPLAY_STATE_PAUSED
-                                             ? "AirPlay Paused"
-                                             : "AirPlay Playing")))));
-    lv_label_set_text(s_label_artist,
-                      airplay_waiting
-                          ? wifi_text
-                          : (artist[0] ? artist
-                                : (spotify_active
-                                       ? "Spotify Connect"
-                                : (dlna_active
-                                       ? "DLNA"
-                                       : (sender[0]
-                                              ? sender
-                                              : "Waiting for track details...")))));
-    lv_label_set_text(s_label_album,
-                      airplay_waiting
-                          ? "Waiting for music..."
-                          : (album[0] ? album
-                               : (spotify_active
-                                      ? "Spotify"
-                               : (dlna_active
-                                      ? "DLNA"
-                                      : "Waiting for track details..."))));
+    lv_label_set_text(
+        s_label_title,
+        airplay_waiting
+            ? "AirPlay Connected"
+            : (title[0]
+                   ? title
+                   : (spotify_active
+                          ? (state == DISPLAY_STATE_PAUSED ? "Spotify Paused"
+                                                           : "Spotify Playing")
+                          : (dlna_active ? "DLNA"
+                                         : (state == DISPLAY_STATE_PAUSED
+                                                ? "AirPlay Paused"
+                                                : "AirPlay Playing")))));
+    lv_label_set_text(
+        s_label_artist,
+        airplay_waiting
+            ? wifi_text
+            : (artist[0]
+                   ? artist
+                   : (spotify_active
+                          ? "Spotify Connect"
+                          : (dlna_active
+                                 ? "DLNA"
+                                 : (sender[0]
+                                        ? sender
+                                        : "Waiting for track details...")))));
+    lv_label_set_text(
+        s_label_album,
+        airplay_waiting
+            ? "Waiting for music..."
+            : (album[0]
+                   ? album
+                   : (spotify_active
+                          ? "Spotify"
+                          : (dlna_active ? "DLNA"
+                                         : "Waiting for track details..."))));
 
     if (spotify_active) {
       snprintf(playback_status, sizeof(playback_status), "SPOTIFY %s",
@@ -1043,8 +1041,7 @@ static void on_rtsp_event(rtsp_event_t event, const rtsp_event_data_t *data,
   if (event == RTSP_EVENT_METADATA && data && data->metadata.has_artwork &&
       data->metadata.artwork_data && data->metadata.artwork_len > 0 &&
       data->metadata.artwork_format == RTSP_ARTWORK_JPEG) {
-    artwork_queue_jpeg(data->metadata.artwork_data,
-                       data->metadata.artwork_len);
+    artwork_queue_jpeg(data->metadata.artwork_data, data->metadata.artwork_len);
     return;
   }
 #endif
@@ -1162,7 +1159,6 @@ static void on_rtsp_event(rtsp_event_t event, const rtsp_event_data_t *data,
       s_display.dirty = true;
     }
     break;
-
   }
 
   STATE_UNLOCK();
@@ -1313,8 +1309,8 @@ void display_init(void *bus) {
 #ifdef CONFIG_ENABLE_AIRPLAY_ARTWORK
   s_artwork_queue = xQueueCreate(1, sizeof(artwork_job_t));
   assert(s_artwork_queue != NULL);
-  BaseType_t artwork_task_created = xTaskCreatePinnedToCore(
-      artwork_task, "artwork", 6144, NULL, 1, NULL, 0);
+  BaseType_t artwork_task_created =
+      xTaskCreatePinnedToCore(artwork_task, "artwork", 6144, NULL, 1, NULL, 0);
   assert(artwork_task_created == pdPASS);
 #endif
 

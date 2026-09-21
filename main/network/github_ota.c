@@ -30,7 +30,8 @@ static github_ota_status_t s_status;
 static SemaphoreHandle_t s_lock;
 
 static void ensure_initialized(void) {
-  if (!s_lock) s_lock = xSemaphoreCreateMutex();
+  if (!s_lock)
+    s_lock = xSemaphoreCreateMutex();
   if (!s_status.current_version[0]) {
     strlcpy(s_status.current_version, esp_app_get_description()->version,
             sizeof(s_status.current_version));
@@ -49,7 +50,8 @@ static void set_error(const char *error) {
 
 static esp_err_t response_event(esp_http_client_event_t *event) {
   if (event->event_id != HTTP_EVENT_ON_DATA || !event->user_data ||
-      event->data_len <= 0) return ESP_OK;
+      event->data_len <= 0)
+    return ESP_OK;
   response_buffer_t *buffer = (response_buffer_t *)event->user_data;
   if (buffer->length + event->data_len + 1 > buffer->capacity)
     return ESP_ERR_NO_MEM;
@@ -90,7 +92,8 @@ esp_err_t github_ota_check(void) {
                                MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT),
       .capacity = RELEASE_BUFFER_SIZE,
   };
-  if (!response.data) response.data = calloc(1, RELEASE_BUFFER_SIZE);
+  if (!response.data)
+    response.data = calloc(1, RELEASE_BUFFER_SIZE);
   if (!response.data) {
     set_error("Not enough memory to check GitHub");
     return ESP_ERR_NO_MEM;
@@ -107,7 +110,8 @@ esp_err_t github_ota_check(void) {
   esp_http_client_handle_t client = esp_http_client_init(&config);
   esp_err_t err = client ? esp_http_client_perform(client) : ESP_ERR_NO_MEM;
   int status = client ? esp_http_client_get_status_code(client) : 0;
-  if (client) esp_http_client_cleanup(client);
+  if (client)
+    esp_http_client_cleanup(client);
   if (err != ESP_OK || status != 200) {
     char message[96];
     snprintf(message, sizeof(message), "GitHub check failed (%s, HTTP %d)",
@@ -148,8 +152,8 @@ esp_err_t github_ota_check(void) {
                            ? s_status.latest_version + 1
                            : s_status.latest_version;
   s_status.update_available = strcmp(current, latest) != 0;
-  s_status.state = s_status.update_available ? GITHUB_OTA_AVAILABLE
-                                             : GITHUB_OTA_CURRENT;
+  s_status.state =
+      s_status.update_available ? GITHUB_OTA_AVAILABLE : GITHUB_OTA_CURRENT;
   xSemaphoreGive(s_lock);
   cJSON_Delete(root);
   return ESP_OK;
@@ -188,19 +192,23 @@ static void install_task(void *arg) {
     vTaskDelete(NULL);
     return;
   }
-  while ((err = esp_https_ota_perform(handle)) == ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
+  while ((err = esp_https_ota_perform(handle)) ==
+         ESP_ERR_HTTPS_OTA_IN_PROGRESS) {
     int read = esp_https_ota_get_image_len_read(handle);
     const esp_partition_t *target = esp_ota_get_next_update_partition(NULL);
     int total = target ? (int)target->size : 0;
     uint8_t progress = total > 0 ? (uint8_t)((read * 95LL) / total) : 0;
-    if (progress > 95) progress = 95;
+    if (progress > 95)
+      progress = 95;
     xSemaphoreTake(s_lock, portMAX_DELAY);
     s_status.progress_percent = progress;
     xSemaphoreGive(s_lock);
     vTaskDelay(pdMS_TO_TICKS(1));
   }
-  if (err == ESP_OK) err = esp_https_ota_finish(handle);
-  else esp_https_ota_abort(handle);
+  if (err == ESP_OK)
+    err = esp_https_ota_finish(handle);
+  else
+    esp_https_ota_abort(handle);
   if (err != ESP_OK) {
     set_error(esp_err_to_name(err));
     vTaskDelete(NULL);
@@ -218,17 +226,19 @@ static void install_task(void *arg) {
 esp_err_t github_ota_install(void) {
   ensure_initialized();
   xSemaphoreTake(s_lock, portMAX_DELAY);
-  bool ready = s_status.state == GITHUB_OTA_AVAILABLE &&
-               s_status.asset_url[0] != '\0';
+  bool ready =
+      s_status.state == GITHUB_OTA_AVAILABLE && s_status.asset_url[0] != '\0';
   xSemaphoreGive(s_lock);
-  if (!ready) return ESP_ERR_INVALID_STATE;
+  if (!ready)
+    return ESP_ERR_INVALID_STATE;
   return xTaskCreate(install_task, "github_ota", 8192, NULL, 4, NULL) == pdPASS
              ? ESP_OK
              : ESP_ERR_NO_MEM;
 }
 
 void github_ota_get_status(github_ota_status_t *status) {
-  if (!status) return;
+  if (!status)
+    return;
   ensure_initialized();
   xSemaphoreTake(s_lock, portMAX_DELAY);
   *status = s_status;

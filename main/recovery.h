@@ -17,7 +17,8 @@ esp_err_t recovery_init(void);
 bool recovery_is_safe_mode(void);
 void recovery_get_status(recovery_status_t *status);
 
-/** Clear the crash counter after the receiver remains healthy for 60 seconds. */
+/** Clear the crash counter after the receiver remains healthy for 60 seconds.
+ */
 void recovery_mark_services_ready(void);
 
 /** Force or clear safe mode for the next boot. */

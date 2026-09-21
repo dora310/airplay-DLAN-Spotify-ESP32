@@ -17,15 +17,17 @@ static uint64_t s_restart_due_us;
 static volatile bool s_ota_pending;
 static volatile bool s_services_ready;
 
-static uint64_t now_us(void) { return (uint64_t)esp_timer_get_time(); }
+static uint64_t now_us(void) {
+  return (uint64_t)esp_timer_get_time();
+}
 
 static void set_restart_deadline_locked(void) {
   if (!s_config.scheduled_restart_enabled) {
     s_restart_due_us = 0;
     return;
   }
-  s_restart_due_us = now_us() +
-      (uint64_t)s_config.scheduled_restart_hours * 3600ULL * 1000000ULL;
+  s_restart_due_us = now_us() + (uint64_t)s_config.scheduled_restart_hours *
+                                    3600ULL * 1000000ULL;
 }
 
 bool maintenance_audio_is_idle(void) {
@@ -41,7 +43,8 @@ static void maintenance_task(void *arg) {
 
     /* A new OTA image remains PENDING_VERIFY until it survives 30 seconds.
        A reset/crash before this point lets the bootloader roll it back. */
-    if (s_ota_pending) healthy_seconds++;
+    if (s_ota_pending)
+      healthy_seconds++;
     if (s_ota_pending && s_services_ready && healthy_seconds >= 30) {
       esp_err_t err = esp_ota_mark_app_valid_cancel_rollback();
       if (err == ESP_OK) {
@@ -73,9 +76,11 @@ static void maintenance_task(void *arg) {
 }
 
 esp_err_t maintenance_init(void) {
-  if (s_lock) return ESP_OK;
+  if (s_lock)
+    return ESP_OK;
   s_lock = xSemaphoreCreateMutex();
-  if (!s_lock) return ESP_ERR_NO_MEM;
+  if (!s_lock)
+    return ESP_ERR_NO_MEM;
   settings_get_maintenance(&s_config);
   xSemaphoreTake(s_lock, portMAX_DELAY);
   set_restart_deadline_locked();
@@ -86,7 +91,9 @@ esp_err_t maintenance_init(void) {
   if (running && esp_ota_get_state_partition(running, &state) == ESP_OK &&
       state == ESP_OTA_IMG_PENDING_VERIFY) {
     s_ota_pending = true;
-    ESP_LOGW(TAG, "OTA image pending verification; 30-second rollback window active");
+    ESP_LOGW(
+        TAG,
+        "OTA image pending verification; 30-second rollback window active");
   }
 
   return xTaskCreate(maintenance_task, "maintenance", 3072, NULL, 3, NULL) ==
@@ -96,9 +103,11 @@ esp_err_t maintenance_init(void) {
 }
 
 esp_err_t maintenance_set_config(const settings_maintenance_t *config) {
-  if (!config || !s_lock) return ESP_ERR_INVALID_STATE;
+  if (!config || !s_lock)
+    return ESP_ERR_INVALID_STATE;
   esp_err_t err = settings_set_maintenance(config);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   settings_maintenance_t saved;
   settings_get_maintenance(&saved);
   xSemaphoreTake(s_lock, portMAX_DELAY);
@@ -106,30 +115,38 @@ esp_err_t maintenance_set_config(const settings_maintenance_t *config) {
       saved.scheduled_restart_enabled != s_config.scheduled_restart_enabled ||
       saved.scheduled_restart_hours != s_config.scheduled_restart_hours;
   s_config = saved;
-  if (schedule_changed) set_restart_deadline_locked();
+  if (schedule_changed)
+    set_restart_deadline_locked();
   xSemaphoreGive(s_lock);
   return ESP_OK;
 }
 
 void maintenance_get_config(settings_maintenance_t *config) {
-  if (!config || !s_lock) return;
+  if (!config || !s_lock)
+    return;
   xSemaphoreTake(s_lock, portMAX_DELAY);
   *config = s_config;
   xSemaphoreGive(s_lock);
 }
 
 uint32_t maintenance_restart_remaining_seconds(void) {
-  if (!s_lock) return 0;
+  if (!s_lock)
+    return 0;
   xSemaphoreTake(s_lock, portMAX_DELAY);
   uint64_t deadline = s_restart_due_us;
   bool enabled = s_config.scheduled_restart_enabled;
   xSemaphoreGive(s_lock);
   uint64_t now = now_us();
-  if (!enabled || !deadline || now >= deadline) return 0;
+  if (!enabled || !deadline || now >= deadline)
+    return 0;
   uint64_t seconds = (deadline - now) / 1000000ULL;
   return seconds > UINT32_MAX ? UINT32_MAX : (uint32_t)seconds;
 }
 
-bool maintenance_ota_pending_verify(void) { return s_ota_pending; }
+bool maintenance_ota_pending_verify(void) {
+  return s_ota_pending;
+}
 
-void maintenance_mark_services_ready(void) { s_services_ready = true; }
+void maintenance_mark_services_ready(void) {
+  s_services_ready = true;
+}

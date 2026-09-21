@@ -25,15 +25,17 @@ static void make_topic(char *out, size_t length, const char *suffix) {
 }
 
 static void publish_state(void) {
-  if (!s_client || !s_status.connected) return;
+  if (!s_client || !s_status.connected)
+    return;
   wifi_diagnostics_t wifi;
   wifi_get_diagnostics(&wifi);
   char topic[160], attributes_topic[160], payload[384];
   make_topic(topic, sizeof(topic), "state");
-  esp_mqtt_client_publish(
-      s_client, topic,
-      playback_control_get_source() == PLAYBACK_SOURCE_NONE ? "idle" : "playing",
-      0, 1, 1);
+  esp_mqtt_client_publish(s_client, topic,
+                          playback_control_get_source() == PLAYBACK_SOURCE_NONE
+                              ? "idle"
+                              : "playing",
+                          0, 1, 1);
   make_topic(attributes_topic, sizeof(attributes_topic), "attributes");
   snprintf(payload, sizeof(payload),
            "{\"source\":\"%s\",\"volume\":%d,"
@@ -45,7 +47,8 @@ static void publish_state(void) {
 }
 
 static void publish_discovery(void) {
-  if (!s_config.home_assistant_discovery) return;
+  if (!s_config.home_assistant_discovery)
+    return;
   char device_name[65], topic[192], command_topic[160], state_topic[160];
   // The maximum configured device name and topic prefix can produce a Home
   // Assistant discovery document slightly larger than 1 KiB.  Keep this
@@ -107,9 +110,8 @@ static void mqtt_event(void *arg, esp_event_base_t base, int32_t id,
     s_status.connected = false;
   } else if (id == MQTT_EVENT_ERROR) {
     s_status.connected = false;
-    s_status.last_error = event->error_handle
-                              ? event->error_handle->error_type
-                              : -1;
+    s_status.last_error =
+        event->error_handle ? event->error_handle->error_type : -1;
   } else if (id == MQTT_EVENT_DATA) {
     if (command_equals(event, "play_pause") || command_equals(event, "PLAY") ||
         command_equals(event, "PAUSE"))
@@ -132,7 +134,8 @@ static void mqtt_event(void *arg, esp_event_base_t base, int32_t id,
 }
 
 esp_err_t mqtt_control_start(void) {
-  if (s_client) return ESP_OK;
+  if (s_client)
+    return ESP_OK;
   settings_get_mqtt(&s_config);
   memset(&s_status, 0, sizeof(s_status));
   s_status.enabled = s_config.enabled;
@@ -156,7 +159,8 @@ esp_err_t mqtt_control_start(void) {
           s_config.password[0] ? s_config.password : NULL,
   };
   s_client = esp_mqtt_client_init(&config);
-  if (!s_client) return ESP_ERR_NO_MEM;
+  if (!s_client)
+    return ESP_ERR_NO_MEM;
   esp_mqtt_client_register_event(s_client, ESP_EVENT_ANY_ID, mqtt_event, NULL);
   ESP_LOGI(TAG, "Starting MQTT/Home Assistant integration at %s",
            s_config.broker_uri);
@@ -169,7 +173,8 @@ esp_err_t mqtt_control_start(void) {
 }
 
 void mqtt_control_stop(void) {
-  if (!s_client) return;
+  if (!s_client)
+    return;
   esp_mqtt_client_handle_t client = s_client;
   if (s_status.connected) {
     char topic[160];
@@ -188,5 +193,6 @@ esp_err_t mqtt_control_reload(void) {
 }
 
 void mqtt_control_get_status(mqtt_control_status_t *status) {
-  if (status) *status = s_status;
+  if (status)
+    *status = s_status;
 }

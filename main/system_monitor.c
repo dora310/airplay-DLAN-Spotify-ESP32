@@ -45,7 +45,8 @@ esp_err_t system_monitor_init(void) {
 }
 
 void system_monitor_get(system_health_t *h) {
-  if (!h) return;
+  if (!h)
+    return;
   h->uptime_seconds = (uint32_t)(esp_timer_get_time() / 1000000ULL);
   h->free_heap = esp_get_free_heap_size();
   h->minimum_free_heap = esp_get_minimum_free_heap_size();

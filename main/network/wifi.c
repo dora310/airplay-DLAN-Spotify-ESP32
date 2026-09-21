@@ -76,8 +76,7 @@ static void configure_provisioning_subnet(void) {
   }
   err = esp_netif_dhcps_start(s_ap_netif);
   if (err != ESP_OK) {
-    ESP_LOGW(TAG, "Provisioning DHCP start returned: %s",
-             esp_err_to_name(err));
+    ESP_LOGW(TAG, "Provisioning DHCP start returned: %s", esp_err_to_name(err));
   }
   ESP_LOGI(TAG, "Provisioning AP address: " WIFI_PROVISIONING_IP_STR "/24");
 }
@@ -178,15 +177,14 @@ static void event_handler(void *arg, esp_event_base_t event_base,
   if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
     if (!s_has_credentials) {
       led_set_wifi_state(LED_WIFI_DISCONNECTED);
-      ESP_LOGI(TAG,
-               "No saved WiFi credentials; setup AP remains available");
+      ESP_LOGI(TAG, "No saved WiFi credentials; setup AP remains available");
       return;
     }
     led_set_wifi_state(LED_WIFI_CONNECTING);
     // Defer scan+connect to a separate task — the blocking scan uses too
     // much stack to run inside the sys_evt event loop (2–4 KB).
-    if (xTaskCreate(scan_and_connect_task, "wifi_scan", 4096, NULL, 3,
-                    NULL) != pdPASS) {
+    if (xTaskCreate(scan_and_connect_task, "wifi_scan", 4096, NULL, 3, NULL) !=
+        pdPASS) {
       ESP_LOGW(TAG, "Could not start best-AP scan; connecting directly");
       esp_wifi_connect();
     }
@@ -218,7 +216,8 @@ static void event_handler(void *arg, esp_event_base_t event_base,
     } else {
       if (s_retry_num == AP_REENABLE_THRESHOLD) {
         if (s_pending_credential_test) {
-          ESP_LOGE(TAG, "WiFi credential test failed; restoring previous network");
+          ESP_LOGE(TAG,
+                   "WiFi credential test failed; restoring previous network");
           settings_clear_pending_wifi_credentials();
           vTaskDelay(pdMS_TO_TICKS(250));
           esp_restart();
@@ -233,8 +232,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
       // Delayed retries with backoff
       schedule_retry();
     }
-  } else if (event_base == WIFI_EVENT &&
-             event_id == WIFI_EVENT_STA_CONNECTED) {
+  } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
     // Associated with the access point; authentication/DHCP is in progress.
     led_set_wifi_state(LED_WIFI_CONNECTING);
   } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
@@ -263,8 +261,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
       if (s_ap_shutdown_timer) {
         (void)esp_timer_stop(s_ap_shutdown_timer);
         esp_err_t timer_err = esp_timer_start_once(
-            s_ap_shutdown_timer,
-            (uint64_t)SETUP_AP_GRACE_SECONDS * 1000000ULL);
+            s_ap_shutdown_timer, (uint64_t)SETUP_AP_GRACE_SECONDS * 1000000ULL);
         if (timer_err == ESP_OK) {
           ESP_LOGI(TAG,
                    "STA connected; setup AP remains available for %d seconds "
@@ -454,8 +451,8 @@ void wifi_init_apsta(const char *ap_ssid, const char *ap_password) {
     s_has_credentials = true;
     ESP_LOGI(TAG, "Testing staged WiFi credentials for: %s", ssid);
   } else if (settings_get_wifi_ssid(ssid, sizeof(ssid)) == ESP_OK &&
-      settings_get_wifi_password(password, sizeof(password)) == ESP_OK &&
-      strlen(ssid) > 0) {
+             settings_get_wifi_password(password, sizeof(password)) == ESP_OK &&
+             strlen(ssid) > 0) {
     s_has_credentials = true;
   }
 
@@ -463,9 +460,9 @@ void wifi_init_apsta(const char *ap_ssid, const char *ap_password) {
   strlcpy((char *)sta_config.sta.ssid, ssid, sizeof(sta_config.sta.ssid));
   strlcpy((char *)sta_config.sta.password, password,
           sizeof(sta_config.sta.password));
-  sta_config.sta.threshold.authmode =
-      s_has_credentials && strlen(password) > 0 ? WIFI_AUTH_WPA2_PSK
-                                                : WIFI_AUTH_OPEN;
+  sta_config.sta.threshold.authmode = s_has_credentials && strlen(password) > 0
+                                          ? WIFI_AUTH_WPA2_PSK
+                                          : WIFI_AUTH_OPEN;
   /* Choose the strongest matching mesh/extender node instead of accepting
      the first scan match, and retry it after a temporary WPA3 refusal. */
   sta_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
@@ -507,8 +504,8 @@ void wifi_init_apsta(const char *ap_ssid, const char *ap_password) {
   if (s_has_credentials) {
     ESP_LOGI(TAG, "Connecting to WiFi: %s", ssid);
   } else {
-    ESP_LOGI(TAG, "Provisioning mode active at http://"
-                  WIFI_PROVISIONING_IP_STR);
+    ESP_LOGI(TAG,
+             "Provisioning mode active at http://" WIFI_PROVISIONING_IP_STR);
   }
 }
 
@@ -543,7 +540,9 @@ bool wifi_is_connected(void) {
   return s_sta_connected;
 }
 
-uint32_t wifi_disconnect_count(void) { return s_disconnect_count; }
+uint32_t wifi_disconnect_count(void) {
+  return s_disconnect_count;
+}
 
 esp_err_t wifi_get_ip_str(char *ip_str, size_t len) {
   if (!s_sta_netif || !ip_str || len == 0) {
@@ -563,7 +562,8 @@ esp_err_t wifi_scan(wifi_ap_record_t **ap_list, uint16_t *ap_count) {
     return ESP_ERR_INVALID_ARG;
   }
 
-  if (!s_scan_mutex || xSemaphoreTake(s_scan_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
+  if (!s_scan_mutex ||
+      xSemaphoreTake(s_scan_mutex, pdMS_TO_TICKS(1000)) != pdTRUE) {
     return ESP_ERR_TIMEOUT;
   }
 
@@ -621,10 +621,12 @@ esp_err_t wifi_scan(wifi_ap_record_t **ap_list, uint16_t *ap_count) {
 }
 
 static bool is_hex_password(const char *password) {
-  if (strlen(password) != 64) return false;
+  if (strlen(password) != 64)
+    return false;
   for (const char *p = password; *p; p++) {
     if (!((*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f') ||
-          (*p >= 'A' && *p <= 'F'))) return false;
+          (*p >= 'A' && *p <= 'F')))
+      return false;
   }
   return true;
 }
@@ -645,7 +647,8 @@ esp_err_t wifi_check_credentials(const char *ssid, const char *password,
   wifi_ap_record_t *best = NULL;
   for (uint16_t i = 0; i < count; i++) {
     if (strcmp((char *)aps[i].ssid, ssid) == 0 &&
-        (!best || aps[i].rssi > best->rssi)) best = &aps[i];
+        (!best || aps[i].rssi > best->rssi))
+      best = &aps[i];
   }
   if (best) {
     result->network_visible = true;
@@ -658,20 +661,21 @@ esp_err_t wifi_check_credentials(const char *ssid, const char *password,
       strlcpy(current, (char *)cfg.sta.ssid, sizeof(current));
       char saved_password[65] = {0};
       settings_get_wifi_password(saved_password, sizeof(saved_password));
-      result->already_connected = strcmp(current, ssid) == 0 &&
-                                  strcmp(saved_password, password) == 0;
+      result->already_connected =
+          strcmp(current, ssid) == 0 && strcmp(saved_password, password) == 0;
     }
     size_t password_len = strlen(password);
     result->password_format_valid =
-        best->authmode == WIFI_AUTH_OPEN ? password_len == 0
-                                        : ((password_len >= 8 && password_len <= 63) ||
-                                           is_hex_password(password));
+        best->authmode == WIFI_AUTH_OPEN
+            ? password_len == 0
+            : ((password_len >= 8 && password_len <= 63) ||
+               is_hex_password(password));
     snprintf(result->message, sizeof(result->message), "%s",
              result->already_connected
                  ? "Already connected: credentials are working"
-                 : result->password_format_valid
-                       ? "Network found; ready for transactional connection test"
-                       : "Password format does not match this network");
+             : result->password_format_valid
+                 ? "Network found; ready for transactional connection test"
+                 : "Password format does not match this network");
   } else {
     snprintf(result->message, sizeof(result->message),
              "Network was not found during the scan");
@@ -681,7 +685,8 @@ esp_err_t wifi_check_credentials(const char *ssid, const char *password,
 }
 
 void wifi_get_diagnostics(wifi_diagnostics_t *diagnostics) {
-  if (!diagnostics) return;
+  if (!diagnostics)
+    return;
   memset(diagnostics, 0, sizeof(*diagnostics));
   diagnostics->initialized = s_wifi_initialized;
   diagnostics->connected = s_sta_connected;

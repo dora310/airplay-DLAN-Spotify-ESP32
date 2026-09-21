@@ -21,13 +21,13 @@
 #include <string.h>
 
 /* Ring buffer size — must be power of two for masking. */
-#define LOG_RING_SIZE 8192
-#define LOG_RING_MASK (LOG_RING_SIZE - 1)
+#define LOG_RING_SIZE  8192
+#define LOG_RING_MASK  (LOG_RING_SIZE - 1)
 #define DIAG_RING_SIZE 4096
 #define DIAG_RING_MASK (DIAG_RING_SIZE - 1)
-#define DIAG_FILE "/spiffs/diagnostics.log"
-#define DIAG_FILE_OLD "/spiffs/diagnostics.old.log"
-#define DIAG_FILE_MAX 12288
+#define DIAG_FILE      "/spiffs/diagnostics.log"
+#define DIAG_FILE_OLD  "/spiffs/diagnostics.old.log"
+#define DIAG_FILE_MAX  12288
 
 #define MAX_WS_CLIENTS        3
 #define BROADCAST_TASK_STACK  4096
@@ -83,7 +83,8 @@ static void diag_ring_write(const char *data, size_t len) {
 
 static size_t diag_ring_read(char *buf, size_t max) {
   size_t used = (s_diag_head - s_diag_tail) & DIAG_RING_MASK;
-  if (used > max) used = max;
+  if (used > max)
+    used = max;
   for (size_t i = 0; i < used; i++) {
     buf[i] = s_diag_ring[s_diag_tail & DIAG_RING_MASK];
     s_diag_tail = (s_diag_tail + 1) & DIAG_RING_MASK;
@@ -92,8 +93,10 @@ static size_t diag_ring_read(char *buf, size_t max) {
 }
 
 static bool is_diagnostic_line(const char *line) {
-  if (!line) return false;
-  while (*line == '\r' || *line == '\n' || *line == ' ') line++;
+  if (!line)
+    return false;
+  while (*line == '\r' || *line == '\n' || *line == ' ')
+    line++;
   return ((line[0] == 'E' || line[0] == 'W') &&
           (line[1] == ' ' || line[1] == '(')) ||
          strstr(line, "E (") != NULL || strstr(line, "W (") != NULL;
@@ -137,7 +140,8 @@ static int log_vprintf_hook(const char *fmt, va_list args) {
       ring_write(buf, (size_t)len);
       if (is_diagnostic_line(buf)) {
         diag_ring_write(buf, (size_t)len);
-        if (buf[len - 1] != '\n') diag_ring_write("\n", 1);
+        if (buf[len - 1] != '\n')
+          diag_ring_write("\n", 1);
       }
       xSemaphoreGive(s_mutex);
     }
@@ -157,12 +161,14 @@ static void persistent_log_task(void *arg) {
       len = diag_ring_read(chunk, sizeof(chunk));
       xSemaphoreGive(s_mutex);
     }
-    if (!len) continue;
+    if (!len)
+      continue;
 
     FILE *existing = fopen(DIAG_FILE, "rb");
     long size = 0;
     if (existing) {
-      if (fseek(existing, 0, SEEK_END) == 0) size = ftell(existing);
+      if (fseek(existing, 0, SEEK_END) == 0)
+        size = ftell(existing);
       fclose(existing);
     }
     if (size >= DIAG_FILE_MAX) {
@@ -282,9 +288,12 @@ esp_err_t log_stream_init(void) {
   if (!s_ring) {
     return ESP_ERR_NO_MEM;
   }
-  s_diag_ring = heap_caps_malloc(DIAG_RING_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-  if (!s_diag_ring) s_diag_ring = malloc(DIAG_RING_SIZE);
-  if (!s_diag_ring) return ESP_ERR_NO_MEM;
+  s_diag_ring =
+      heap_caps_malloc(DIAG_RING_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+  if (!s_diag_ring)
+    s_diag_ring = malloc(DIAG_RING_SIZE);
+  if (!s_diag_ring)
+    return ESP_ERR_NO_MEM;
 
   s_head = s_tail = 0;
   s_diag_head = s_diag_tail = 0;
@@ -298,17 +307,19 @@ esp_err_t log_stream_init(void) {
   /* Hook into esp_log — keep the original so UART output continues. */
   s_orig_vprintf = esp_log_set_vprintf(log_vprintf_hook);
 
-  task_create_spiram(persistent_log_task, "diag_log", 3072, NULL, 2,
-                     NULL, NULL);
+  task_create_spiram(persistent_log_task, "diag_log", 3072, NULL, 2, NULL,
+                     NULL);
 
   return ESP_OK;
 }
 
 static size_t read_file_into(const char *path, char *buffer, size_t capacity,
                              size_t offset) {
-  if (offset >= capacity) return offset;
+  if (offset >= capacity)
+    return offset;
   FILE *file = fopen(path, "rb");
-  if (!file) return offset;
+  if (!file)
+    return offset;
   offset += fread(buffer + offset, 1, capacity - offset - 1, file);
   fclose(file);
   buffer[offset] = '\0';
@@ -316,7 +327,8 @@ static size_t read_file_into(const char *path, char *buffer, size_t capacity,
 }
 
 size_t log_stream_read_persistent(char *buffer, size_t capacity) {
-  if (!buffer || capacity < 2) return 0;
+  if (!buffer || capacity < 2)
+    return 0;
   buffer[0] = '\0';
   size_t offset = read_file_into(DIAG_FILE_OLD, buffer, capacity, 0);
   return read_file_into(DIAG_FILE, buffer, capacity, offset);
@@ -333,7 +345,9 @@ esp_err_t log_stream_clear_persistent(void) {
   return ESP_OK;
 }
 
-uint32_t log_stream_persistent_dropped(void) { return s_diag_dropped; }
+uint32_t log_stream_persistent_dropped(void) {
+  return s_diag_dropped;
+}
 
 esp_err_t log_stream_register(httpd_handle_t server) {
   s_server = server;

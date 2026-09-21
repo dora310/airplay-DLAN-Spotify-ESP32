@@ -33,5 +33,6 @@ size_t log_stream_read_persistent(char *buffer, size_t capacity);
 /** Erase retained warning/error history. */
 esp_err_t log_stream_clear_persistent(void);
 
-/** Number of diagnostic bytes dropped because the non-blocking ring was full. */
+/** Number of diagnostic bytes dropped because the non-blocking ring was full.
+ */
 uint32_t log_stream_persistent_dropped(void);

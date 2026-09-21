@@ -6,9 +6,9 @@
 #include "nvs.h"
 #include <string.h>
 
-#define RECOVERY_NAMESPACE "recovery"
+#define RECOVERY_NAMESPACE   "recovery"
 #define RECOVERY_KEY_CRASHES "crashes"
-#define RECOVERY_KEY_FORCED "forced"
+#define RECOVERY_KEY_FORCED  "forced"
 #define RECOVERY_CRASH_LIMIT 3
 
 static const char *TAG = "recovery";
@@ -24,29 +24,37 @@ static bool is_crash_reset(esp_reset_reason_t reason) {
 static esp_err_t store_u8(const char *key, uint8_t value) {
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(RECOVERY_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   err = nvs_set_u8(nvs, key, value);
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   return err;
 }
 
 esp_err_t recovery_init(void) {
-  if (s_initialized) return ESP_OK;
+  if (s_initialized)
+    return ESP_OK;
   memset(&s_status, 0, sizeof(s_status));
   s_status.reset_reason = esp_reset_reason();
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(RECOVERY_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   uint8_t crashes = 0, forced = 0;
   nvs_get_u8(nvs, RECOVERY_KEY_CRASHES, &crashes);
   nvs_get_u8(nvs, RECOVERY_KEY_FORCED, &forced);
-  if (is_crash_reset(s_status.reset_reason) && crashes < UINT8_MAX) crashes++;
-  else if (!is_crash_reset(s_status.reset_reason) && !forced) crashes = 0;
+  if (is_crash_reset(s_status.reset_reason) && crashes < UINT8_MAX)
+    crashes++;
+  else if (!is_crash_reset(s_status.reset_reason) && !forced)
+    crashes = 0;
   err = nvs_set_u8(nvs, RECOVERY_KEY_CRASHES, crashes);
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
 
   s_status.consecutive_crashes = crashes;
   s_status.forced = forced != 0;
@@ -62,10 +70,13 @@ esp_err_t recovery_init(void) {
   return ESP_OK;
 }
 
-bool recovery_is_safe_mode(void) { return s_status.safe_mode; }
+bool recovery_is_safe_mode(void) {
+  return s_status.safe_mode;
+}
 
 void recovery_get_status(recovery_status_t *status) {
-  if (status) *status = s_status;
+  if (status)
+    *status = s_status;
 }
 
 static void healthy_task(void *arg) {
@@ -81,7 +92,8 @@ static void healthy_task(void *arg) {
 }
 
 void recovery_mark_services_ready(void) {
-  if (s_health_task_started || s_status.safe_mode) return;
+  if (s_health_task_started || s_status.safe_mode)
+    return;
   if (xTaskCreate(healthy_task, "boot_health", 2048, NULL, 2, NULL) == pdPASS)
     s_health_task_started = true;
 }
@@ -90,15 +102,16 @@ esp_err_t recovery_force_safe_mode(bool enabled) {
   esp_err_t err = store_u8(RECOVERY_KEY_FORCED, enabled ? 1 : 0);
   if (err == ESP_OK) {
     s_status.forced = enabled;
-    s_status.safe_mode = enabled ||
-                         s_status.consecutive_crashes >= RECOVERY_CRASH_LIMIT;
+    s_status.safe_mode =
+        enabled || s_status.consecutive_crashes >= RECOVERY_CRASH_LIMIT;
   }
   return err;
 }
 
 esp_err_t recovery_clear(void) {
   esp_err_t err = store_u8(RECOVERY_KEY_CRASHES, 0);
-  if (err == ESP_OK) err = store_u8(RECOVERY_KEY_FORCED, 0);
+  if (err == ESP_OK)
+    err = store_u8(RECOVERY_KEY_FORCED, 0);
   if (err == ESP_OK) {
     s_status.consecutive_crashes = 0;
     s_status.forced = false;

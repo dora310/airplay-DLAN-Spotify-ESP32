@@ -47,9 +47,9 @@ void audio_output_stop(void);
  */
 esp_err_t audio_output_write(const void *data, size_t bytes, TickType_t wait);
 
-/** Write mutable stereo PCM through volume, channel routing and software DSP. */
-esp_err_t audio_output_write_pcm(int16_t *data, size_t frames,
-                                 TickType_t wait);
+/** Write mutable stereo PCM through volume, channel routing and software DSP.
+ */
+esp_err_t audio_output_write_pcm(int16_t *data, size_t frames, TickType_t wait);
 
 /**
  * Write PCM from a non-AirPlay network source. Channel routing, software DSP

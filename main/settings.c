@@ -46,7 +46,8 @@ static uint32_t g_schema_version;
 static esp_err_t migrate_settings(void) {
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
 
   uint32_t from = 0;
   err = nvs_get_u32(nvs, NVS_KEY_SCHEMA, &from);
@@ -70,21 +71,22 @@ static esp_err_t migrate_settings(void) {
     /* Migrations are deliberately additive. Existing Wi-Fi, device, EQ,
        radio, password and maintenance keys remain untouched. New settings
        use safe defaults when their versioned blob is absent. */
-    ESP_LOGI(TAG, "Migrating settings schema %lu -> %u",
-             (unsigned long)from, SETTINGS_SCHEMA_VERSION);
+    ESP_LOGI(TAG, "Migrating settings schema %lu -> %u", (unsigned long)from,
+             SETTINGS_SCHEMA_VERSION);
     err = nvs_set_u32(nvs, NVS_KEY_SCHEMA, SETTINGS_SCHEMA_VERSION);
-    if (err == ESP_OK) err = nvs_commit(nvs);
+    if (err == ESP_OK)
+      err = nvs_commit(nvs);
   }
   nvs_close(nvs);
-  if (err == ESP_OK) g_schema_version = SETTINGS_SCHEMA_VERSION;
+  if (err == ESP_OK)
+    g_schema_version = SETTINGS_SCHEMA_VERSION;
   return err;
 }
 
 esp_err_t settings_init(void) {
   esp_err_t migration = migrate_settings();
   if (migration != ESP_OK) {
-    ESP_LOGE(TAG, "Settings migration failed: %s",
-             esp_err_to_name(migration));
+    ESP_LOGE(TAG, "Settings migration failed: %s", esp_err_to_name(migration));
     return migration;
   }
   // Load volume on init
@@ -113,7 +115,9 @@ esp_err_t settings_init(void) {
   return ESP_OK;
 }
 
-uint32_t settings_schema_version(void) { return g_schema_version; }
+uint32_t settings_schema_version(void) {
+  return g_schema_version;
+}
 
 esp_err_t settings_get_volume(float *volume_db) {
   if (!volume_db) {
@@ -316,10 +320,13 @@ esp_err_t settings_set_pending_wifi_credentials(const char *ssid,
   }
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   err = nvs_set_str(nvs, NVS_KEY_PENDING_SSID, ssid);
-  if (err == ESP_OK) err = nvs_set_str(nvs, NVS_KEY_PENDING_PASS, password);
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_set_str(nvs, NVS_KEY_PENDING_PASS, password);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   if (err == ESP_OK) {
     ESP_LOGI(TAG, "Staged WiFi credentials for transactional test: %s", ssid);
@@ -330,8 +337,8 @@ esp_err_t settings_set_pending_wifi_credentials(const char *ssid,
 bool settings_has_pending_wifi_credentials(void) {
   char ssid[MAX_WIFI_SSID_LEN + 1] = {0};
   char password[MAX_WIFI_PASSWORD_LEN + 1] = {0};
-  return settings_get_pending_wifi_credentials(
-             ssid, sizeof(ssid), password, sizeof(password)) == ESP_OK &&
+  return settings_get_pending_wifi_credentials(ssid, sizeof(ssid), password,
+                                               sizeof(password)) == ESP_OK &&
          ssid[0] != '\0';
 }
 
@@ -342,7 +349,8 @@ esp_err_t settings_get_pending_wifi_credentials(char *ssid, size_t ssid_len,
     return ESP_ERR_INVALID_ARG;
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs);
-  if (err != ESP_OK) return ESP_ERR_NOT_FOUND;
+  if (err != ESP_OK)
+    return ESP_ERR_NOT_FOUND;
   size_t size = ssid_len;
   err = nvs_get_str(nvs, NVS_KEY_PENDING_SSID, ssid, &size);
   if (err == ESP_OK) {
@@ -356,12 +364,16 @@ esp_err_t settings_get_pending_wifi_credentials(char *ssid, size_t ssid_len,
 esp_err_t settings_clear_pending_wifi_credentials(void) {
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   esp_err_t a = nvs_erase_key(nvs, NVS_KEY_PENDING_SSID);
   esp_err_t b = nvs_erase_key(nvs, NVS_KEY_PENDING_PASS);
-  if (a != ESP_OK && a != ESP_ERR_NVS_NOT_FOUND) err = a;
-  else if (b != ESP_OK && b != ESP_ERR_NVS_NOT_FOUND) err = b;
-  else err = nvs_commit(nvs);
+  if (a != ESP_OK && a != ESP_ERR_NVS_NOT_FOUND)
+    err = a;
+  else if (b != ESP_OK && b != ESP_ERR_NVS_NOT_FOUND)
+    err = b;
+  else
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   return err;
 }
@@ -371,16 +383,20 @@ esp_err_t settings_promote_pending_wifi_credentials(void) {
   char password[MAX_WIFI_PASSWORD_LEN + 1] = {0};
   esp_err_t err = settings_get_pending_wifi_credentials(
       ssid, sizeof(ssid), password, sizeof(password));
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   err = settings_set_wifi_credentials(ssid, password);
-  if (err == ESP_OK) err = settings_clear_pending_wifi_credentials();
-  if (err == ESP_OK) ESP_LOGI(TAG, "WiFi credential test passed; settings committed");
+  if (err == ESP_OK)
+    err = settings_clear_pending_wifi_credentials();
+  if (err == ESP_OK)
+    ESP_LOGI(TAG, "WiFi credential test passed; settings committed");
   return err;
 }
 
 bool settings_has_wifi_credentials(void) {
   char ssid[MAX_WIFI_SSID_LEN + 1] = {0};
-  return settings_get_wifi_ssid(ssid, sizeof(ssid)) == ESP_OK && ssid[0] != '\0';
+  return settings_get_wifi_ssid(ssid, sizeof(ssid)) == ESP_OK &&
+         ssid[0] != '\0';
 }
 
 esp_err_t settings_get_device_name(char *name, size_t len) {
@@ -588,23 +604,27 @@ esp_err_t settings_set_web_password(const char *password) {
   }
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   if (!password[0]) {
     err = nvs_erase_key(nvs, NVS_KEY_WEB_PASSWORD);
-    if (err == ESP_ERR_NVS_NOT_FOUND) err = ESP_OK;
+    if (err == ESP_ERR_NVS_NOT_FOUND)
+      err = ESP_OK;
   } else {
     uint8_t digest[32];
     password_digest(password, digest);
     err = nvs_set_blob(nvs, NVS_KEY_WEB_PASSWORD, digest, sizeof(digest));
   }
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   return err;
 }
 
 bool settings_web_password_is_set(void) {
   nvs_handle_t nvs;
-  if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs) != ESP_OK) return false;
+  if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs) != ESP_OK)
+    return false;
   size_t size = 0;
   esp_err_t err = nvs_get_blob(nvs, NVS_KEY_WEB_PASSWORD, NULL, &size);
   nvs_close(nvs);
@@ -612,26 +632,33 @@ bool settings_web_password_is_set(void) {
 }
 
 bool settings_verify_web_password(const char *password) {
-  if (!settings_web_password_is_set()) return true;
-  if (!password) return false;
+  if (!settings_web_password_is_set())
+    return true;
+  if (!password)
+    return false;
   uint8_t expected[32], actual[32];
   size_t size = sizeof(expected);
   nvs_handle_t nvs;
-  if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs) != ESP_OK) return false;
+  if (nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs) != ESP_OK)
+    return false;
   esp_err_t err = nvs_get_blob(nvs, NVS_KEY_WEB_PASSWORD, expected, &size);
   nvs_close(nvs);
-  if (err != ESP_OK || size != sizeof(expected)) return false;
+  if (err != ESP_OK || size != sizeof(expected))
+    return false;
   password_digest(password, actual);
   uint8_t difference = 0;
-  for (size_t i = 0; i < sizeof(expected); i++) difference |= expected[i] ^ actual[i];
+  for (size_t i = 0; i < sizeof(expected); i++)
+    difference |= expected[i] ^ actual[i];
   return difference == 0;
 }
 
 esp_err_t settings_get_web_password_digest(uint8_t digest[32]) {
-  if (!digest) return ESP_ERR_INVALID_ARG;
+  if (!digest)
+    return ESP_ERR_INVALID_ARG;
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   size_t size = 32;
   err = nvs_get_blob(nvs, NVS_KEY_WEB_PASSWORD, digest, &size);
   nvs_close(nvs);
@@ -639,12 +666,15 @@ esp_err_t settings_get_web_password_digest(uint8_t digest[32]) {
 }
 
 esp_err_t settings_set_web_password_digest(const uint8_t digest[32]) {
-  if (!digest) return ESP_ERR_INVALID_ARG;
+  if (!digest)
+    return ESP_ERR_INVALID_ARG;
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   err = nvs_set_blob(nvs, NVS_KEY_WEB_PASSWORD, digest, 32);
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   return err;
 }
@@ -672,29 +702,35 @@ static void maintenance_sanitize(settings_maintenance_t *config) {
 }
 
 esp_err_t settings_get_maintenance(settings_maintenance_t *config) {
-  if (!config) return ESP_ERR_INVALID_ARG;
+  if (!config)
+    return ESP_ERR_INVALID_ARG;
   maintenance_defaults(config);
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs);
-  if (err != ESP_OK) return ESP_OK;
+  if (err != ESP_OK)
+    return ESP_OK;
   size_t size = sizeof(*config);
   settings_maintenance_t saved;
   err = nvs_get_blob(nvs, NVS_KEY_MAINTENANCE, &saved, &size);
   nvs_close(nvs);
-  if (err == ESP_OK && size == sizeof(saved)) *config = saved;
+  if (err == ESP_OK && size == sizeof(saved))
+    *config = saved;
   maintenance_sanitize(config);
   return ESP_OK;
 }
 
 esp_err_t settings_set_maintenance(const settings_maintenance_t *config) {
-  if (!config) return ESP_ERR_INVALID_ARG;
+  if (!config)
+    return ESP_ERR_INVALID_ARG;
   settings_maintenance_t value = *config;
   maintenance_sanitize(&value);
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   err = nvs_set_blob(nvs, NVS_KEY_MAINTENANCE, &value, sizeof(value));
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   return err;
 }
@@ -702,10 +738,8 @@ esp_err_t settings_set_maintenance(const settings_maintenance_t *config) {
 static void mqtt_defaults(settings_mqtt_t *config) {
   memset(config, 0, sizeof(*config));
   config->home_assistant_discovery = true;
-  strlcpy(config->broker_uri, "mqtt://192.168.1.2",
-          sizeof(config->broker_uri));
-  strlcpy(config->topic_prefix, "airplay-dlna",
-          sizeof(config->topic_prefix));
+  strlcpy(config->broker_uri, "mqtt://192.168.1.2", sizeof(config->broker_uri));
+  strlcpy(config->topic_prefix, "airplay-dlna", sizeof(config->topic_prefix));
 #ifdef CONFIG_MQTT_CONTROL_ENABLE
   config->enabled = true;
 #ifdef CONFIG_MQTT_BROKER_URI
@@ -720,20 +754,23 @@ static void mqtt_defaults(settings_mqtt_t *config) {
 }
 
 static bool mqtt_valid(const settings_mqtt_t *config) {
-  if (!config) return false;
-  if (config->enabled &&
-      (strncmp(config->broker_uri, "mqtt://", 7) != 0 &&
-       strncmp(config->broker_uri, "mqtts://", 8) != 0)) return false;
+  if (!config)
+    return false;
+  if (config->enabled && (strncmp(config->broker_uri, "mqtt://", 7) != 0 &&
+                          strncmp(config->broker_uri, "mqtts://", 8) != 0))
+    return false;
   return config->topic_prefix[0] != '\0' &&
          strlen(config->topic_prefix) < SETTINGS_MQTT_TOPIC_LEN;
 }
 
 esp_err_t settings_get_mqtt(settings_mqtt_t *config) {
-  if (!config) return ESP_ERR_INVALID_ARG;
+  if (!config)
+    return ESP_ERR_INVALID_ARG;
   mqtt_defaults(config);
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs);
-  if (err != ESP_OK) return ESP_OK;
+  if (err != ESP_OK)
+    return ESP_OK;
   settings_mqtt_t saved;
   size_t size = sizeof(saved);
   err = nvs_get_blob(nvs, NVS_KEY_MQTT, &saved, &size);
@@ -745,7 +782,8 @@ esp_err_t settings_get_mqtt(settings_mqtt_t *config) {
 }
 
 esp_err_t settings_set_mqtt(const settings_mqtt_t *config) {
-  if (!mqtt_valid(config)) return ESP_ERR_INVALID_ARG;
+  if (!mqtt_valid(config))
+    return ESP_ERR_INVALID_ARG;
   settings_mqtt_t value = *config;
   value.broker_uri[sizeof(value.broker_uri) - 1] = '\0';
   value.username[sizeof(value.username) - 1] = '\0';
@@ -753,9 +791,11 @@ esp_err_t settings_set_mqtt(const settings_mqtt_t *config) {
   value.topic_prefix[sizeof(value.topic_prefix) - 1] = '\0';
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   err = nvs_set_blob(nvs, NVS_KEY_MQTT, &value, sizeof(value));
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   return err;
 }
@@ -763,9 +803,11 @@ esp_err_t settings_set_mqtt(const settings_mqtt_t *config) {
 esp_err_t settings_factory_reset(void) {
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
   err = nvs_erase_all(nvs);
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   if (err == ESP_OK) {
     g_volume_db = -15.0f;
@@ -785,7 +827,8 @@ esp_err_t settings_get_radio_preset(uint8_t slot,
 
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs);
-  if (err != ESP_OK) return ESP_ERR_NOT_FOUND;
+  if (err != ESP_OK)
+    return ESP_ERR_NOT_FOUND;
 
   char name_key[12];
   char url_key[12];
@@ -819,7 +862,8 @@ esp_err_t settings_set_radio_preset(uint8_t slot, const char *name,
 
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
-  if (err != ESP_OK) return err;
+  if (err != ESP_OK)
+    return err;
 
   char name_key[12];
   char url_key[12];
@@ -829,14 +873,19 @@ esp_err_t settings_set_radio_preset(uint8_t slot, const char *name,
   if (url[0] == '\0') {
     esp_err_t name_err = nvs_erase_key(nvs, name_key);
     esp_err_t url_err = nvs_erase_key(nvs, url_key);
-    if (name_err != ESP_OK && name_err != ESP_ERR_NVS_NOT_FOUND) err = name_err;
-    else if (url_err != ESP_OK && url_err != ESP_ERR_NVS_NOT_FOUND) err = url_err;
-    else err = ESP_OK;
+    if (name_err != ESP_OK && name_err != ESP_ERR_NVS_NOT_FOUND)
+      err = name_err;
+    else if (url_err != ESP_OK && url_err != ESP_ERR_NVS_NOT_FOUND)
+      err = url_err;
+    else
+      err = ESP_OK;
   } else {
     err = nvs_set_str(nvs, name_key, name[0] ? name : "Radio preset");
-    if (err == ESP_OK) err = nvs_set_str(nvs, url_key, url);
+    if (err == ESP_OK)
+      err = nvs_set_str(nvs, url_key, url);
   }
-  if (err == ESP_OK) err = nvs_commit(nvs);
+  if (err == ESP_OK)
+    err = nvs_commit(nvs);
   nvs_close(nvs);
   return err;
 }

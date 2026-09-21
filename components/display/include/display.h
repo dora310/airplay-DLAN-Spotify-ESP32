@@ -74,11 +74,16 @@ static inline void display_notify_metadata(const char *title,
   (void)position_secs;
 }
 
-static inline void display_notify_playback(bool paused) { (void)paused; }
+static inline void display_notify_playback(bool paused) {
+  (void)paused;
+}
 
-static inline void display_notify_stopped(void) {}
+static inline void display_notify_stopped(void) {
+}
 
-static inline void display_notify_dlna_active(bool active) { (void)active; }
+static inline void display_notify_dlna_active(bool active) {
+  (void)active;
+}
 
 static inline void display_notify_spotify_active(bool active) {
   (void)active;

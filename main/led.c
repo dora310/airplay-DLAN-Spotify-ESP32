@@ -317,9 +317,8 @@ static void rgb_led_init(void) {
   }
 
   led_strip_clear(s_rgb_strip);
-  s_rgb_blink_timer =
-      xTimerCreate("rgb_blink", pdMS_TO_TICKS(700), pdTRUE, NULL,
-                   rgb_blink_timer_cb);
+  s_rgb_blink_timer = xTimerCreate("rgb_blink", pdMS_TO_TICKS(700), pdTRUE,
+                                   NULL, rgb_blink_timer_cb);
   if (!s_rgb_blink_timer) {
     ESP_LOGE(TAG, "RGB LED blink timer allocation failed");
   }
@@ -419,10 +418,9 @@ static void rgb_led_set_vu(float norm, float bass_ratio) {
   // Sweep the full 0-359 degree colour spectrum. Audio energy and bass move
   // the hue within that sweep while RMS level controls brightness.
   uint16_t sweep = (uint16_t)((esp_timer_get_time() / 20000) % 360);
-  uint16_t hue =
-      (uint16_t)((sweep + (uint16_t)(norm * 120.0f) +
-                  (uint16_t)(bass_ratio * 90.0f)) %
-                 360);
+  uint16_t hue = (uint16_t)((sweep + (uint16_t)(norm * 120.0f) +
+                             (uint16_t)(bass_ratio * 90.0f)) %
+                            360);
 
   // High saturation, reduce slightly at very high energy for warm white
   uint8_t sat = 255;
