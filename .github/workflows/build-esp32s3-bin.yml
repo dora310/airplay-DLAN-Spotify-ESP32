@@ -1,0 +1,139 @@
+name: Build ESP32-S3 installation BIN
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-esp32s3:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Read firmware version
+        id: firmware_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < version.txt)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version.txt must contain MAJOR.MINOR.PATCH, got '$version'"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Restore required ESP-IDF components
+        shell: bash
+        run: |
+          if [ ! -f components/boards/CMakeLists.txt ]; then
+            echo "components directory is missing; restoring it from official v0.1.29 source"
+            git clone --depth 1 --branch v0.1.29 \
+              https://github.com/rbouteiller/airplay-esp32.git \
+              "$RUNNER_TEMP/airplay-esp32-upstream"
+            mkdir -p components
+            cp -a "$RUNNER_TEMP/airplay-esp32-upstream/components/." components/
+          fi
+
+          test -f components/boards/CMakeLists.txt
+          test -f components/dac/CMakeLists.txt
+          test -f components/audio-resampler/CMakeLists.txt
+
+      - name: Prepare private Spotify test credentials
+        shell: bash
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          : > sdkconfig.spotify
+          if [[ -n "${SPOTIFY_CLIENT_ID}" && -n "${SPOTIFY_CLIENT_SECRET}" ]]; then
+            [[ "${SPOTIFY_CLIENT_ID}" =~ ^[A-Za-z0-9]+$ ]]
+            [[ "${SPOTIFY_CLIENT_SECRET}" =~ ^[A-Za-z0-9]+$ ]]
+            printf 'CONFIG_SPOTIFY_CLIENT_ID="%s"\n' "${SPOTIFY_CLIENT_ID}" >> sdkconfig.spotify
+            printf 'CONFIG_SPOTIFY_CLIENT_SECRET="%s"\n' "${SPOTIFY_CLIENT_SECRET}" >> sdkconfig.spotify
+          else
+            echo "::warning::Spotify secrets are missing; AirPlay/DLNA will build but Spotify Connect will stay disabled at runtime."
+          fi
+
+      - name: Build with ESP-IDF 5.5
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32s3
+          command: >
+            python -m pip install --no-cache-dir "idf-component-manager==2.5.2" &&
+            python -m pip install --no-cache-dir "protobuf==3.20.3" "setuptools<81" &&
+            rm -f sdkconfig sdkconfig.old dependencies.lock &&
+            rm -rf build managed_components &&
+            idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32s3;sdkconfig.spotify" build &&
+            cp build/airplay2-receiver.bin firmware-ota.bin &&
+            cd build &&
+            esptool.py --chip esp32s3 merge_bin --format raw
+            -o ../firmware-install.bin $(cat flash_args)
+
+      - name: Validate and name generated BIN files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version="${{ steps.firmware_version.outputs.version }}"
+          install_file="airplay2-receiver-esp32s3-v${version}-install.bin"
+          ota_file="airplay2-receiver-esp32s3-v${version}-ota.bin"
+          checksum_file="SHA256SUMS-v${version}.txt"
+
+          test -s firmware-install.bin || {
+            echo "::error::ESP-IDF did not create firmware-install.bin"
+            exit 1
+          }
+          test -s firmware-ota.bin || {
+            echo "::error::ESP-IDF did not create firmware-ota.bin"
+            exit 1
+          }
+
+          python3 - firmware-install.bin <<'PY'
+          import sys
+          from pathlib import Path
+
+          expected_size = 0x1000000
+          app_offset = 0x20000
+          image_magic = 0xE9
+          dio_mode = 2
+
+          path = Path(sys.argv[1])
+          firmware = path.read_bytes()
+          if len(firmware) != expected_size:
+              raise SystemExit(
+                  f"Invalid merged size: {len(firmware)}; expected {expected_size}"
+              )
+          if firmware[0] != image_magic:
+              raise SystemExit("Bootloader is missing at address 0x0")
+          if firmware[2] != dio_mode:
+              raise SystemExit(
+                  f"Bootloader flash mode is {firmware[2]}; expected DIO (2)"
+              )
+          if firmware[app_offset] != image_magic:
+              raise SystemExit("Application is missing at address 0x20000")
+          print("Merged firmware validation passed")
+          PY
+
+          mv firmware-install.bin "$install_file"
+          mv firmware-ota.bin "$ota_file"
+          sha256sum "$install_file" "$ota_file" > "$checksum_file"
+
+          ls -lh "$install_file" "$ota_file" "$checksum_file"
+
+      - name: Upload installation files
+        uses: actions/upload-artifact@v6
+        with:
+          name: airplay-esp32s3-v${{ steps.firmware_version.outputs.version }}-bin-files
+          path: |
+            airplay2-receiver-esp32s3-v${{ steps.firmware_version.outputs.version }}-install.bin
+            airplay2-receiver-esp32s3-v${{ steps.firmware_version.outputs.version }}-ota.bin
+            SHA256SUMS-v${{ steps.firmware_version.outputs.version }}.txt
+            build/flash_args
+            build/flasher_args.json
+          if-no-files-found: error
+          retention-days: 30
