@@ -1,0 +1,48 @@
+AirPlay 2 and DLNA+ Receiver v3.3.0
+===================================
+
+GitHub installation
+-------------------
+1. Back up the current repository.
+2. Copy this source into the repository root, preserving .github/workflows.
+3. Delete the generated root file named sdkconfig if GitHub still contains it.
+   Keep sdkconfig.defaults and every sdkconfig.defaults.* file.
+4. Commit and push the source.
+5. Run Actions > Build ESP32-S3 installation BIN > Run workflow.
+6. Download the generated v3.3.0 artifact.
+
+ESP32-S3 flashing
+-----------------
+- Fresh installation: flash the file ending in -install.bin at address 0x0.
+- Web update from an older compatible build: upload the file ending in
+  -ota.bin. Do not upload the merged -install.bin through the OTA form.
+
+GitHub updater
+--------------
+After the build passes, create and push the tag v3.3.0. The release workflow
+publishes both install and OTA assets. The receiver's /reliability page can
+then find the target-specific OTA asset in the latest GitHub Release.
+
+New controls
+------------
+Open http://DEVICE-IP/reliability for Safe Mode, Wi-Fi diagnostics and staged
+credential testing, MQTT/Home Assistant, speaker tests, balance and GitHub OTA.
+
+Wi-Fi credential test behavior
+-------------------------------
+New credentials are staged without overwriting the working credentials. After
+restart the device tests them. DHCP success commits them. Five connection
+failures erase the staged credentials and restart with the previous network.
+
+Safe Mode behavior
+------------------
+Three consecutive panic/watchdog resets activate Safe Mode. Only networking
+and the web panel start. Clear recovery from /reliability and restart after
+correcting the configuration.
+
+Validation note
+---------------
+The source, workflow YAML, HTML, generated-file exclusions, route wiring and C
+delimiter structure were checked in the workspace. The final ESP-IDF 5.5
+cross-compile must run in GitHub Actions because the local workspace does not
+contain the ESP-IDF Xtensa toolchain.

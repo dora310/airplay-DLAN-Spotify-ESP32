@@ -1,0 +1,19 @@
+.cache/
+.claude/
+.pio/
+.venv/
+.vscode/
+build*
+!.github/workflows/build.yml
+managed_components/
+sdkconfig
+sdkconfig.*
+!sdkconfig.defaults
+!sdkconfig.defaults.*
+
+#
+user_platformio.ini
+
+# macOS metadata
+.DS_Store
+**/.DS_Store

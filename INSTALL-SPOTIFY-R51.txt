@@ -1,0 +1,114 @@
+AirPlay + DLNA + Spotify Connect experimental R51
+Firmware version: 3.4.0
+
+IMPORTANT
+=========
+This is a test build. Keep your working v3.3.1 installation BIN so you can
+restore it if necessary.
+
+Spotify Connect in this package uses the unofficial open-source cspot client.
+Spotify may change its service at any time. A Spotify Premium account is
+required.
+
+The Spotify client secret is compiled into the test BIN. Do not publish,
+share, or attach the resulting v3.4.0 BIN to a public GitHub Release.
+
+
+1. Create Spotify test credentials
+==================================
+1. Sign in at https://developer.spotify.com/dashboard
+2. Create an app for this private test.
+3. Copy its Client ID.
+4. Open the app settings and reveal/copy its Client Secret.
+5. If Spotify asks for a redirect URI, use:
+       http://127.0.0.1/callback
+
+
+2. Add private GitHub Actions secrets
+=====================================
+In your airplay-DLNA-esp32 GitHub repository:
+
+1. Open Settings.
+2. Open Secrets and variables -> Actions.
+3. Select New repository secret.
+4. Add both of these exact names:
+
+       SPOTIFY_CLIENT_ID
+       SPOTIFY_CLIENT_SECRET
+
+Paste the matching Spotify value into each secret. Never paste either value
+into sdkconfig.defaults, a source file, a GitHub issue, or a chat message.
+
+
+3. Install the R51 source files
+===============================
+Copy the contents of this ZIP into the root of your existing repository,
+allowing the supplied files to replace files with the same names. Commit and
+push the changes.
+
+This package includes the vendored cspot source under:
+    components/cspot_embedded/
+
+Do not omit that directory.
+
+
+4. Build
+========
+1. Open the repository's Actions tab.
+2. Run "Build ESP32-S3 installation BIN" manually.
+3. Download the v3.4.0 BIN artifact after the build succeeds.
+
+The R51 build uses the existing 16 MB flash configuration and switches to the
+provided 16 MB partition layout so the Spotify decoder fits beside AirPlay,
+DLNA, the TFT display, and OTA slots.
+
+
+5. Flash and test
+=================
+1. Flash the v3.4.0 installation BIN using the same method used previously.
+2. Connect the ESP32 receiver to Wi-Fi.
+3. Put the phone on the same Wi-Fi network.
+4. Open Spotify using a Premium account.
+5. Start a track, open Devices Available, and choose the receiver's normal
+   AirPlay device name.
+6. In the serial monitor, confirm a line similar to:
+       Spotify ZeroConf ready as '<device name>'
+
+Expected result:
+- The device appears in Spotify's device list.
+- The TFT shows the track title, artist, album and "SPOTIFY PLAYING".
+- Spotify volume controls the output level.
+- The RGB LED reacts to Spotify PCM audio using the existing spectrum effect.
+- Pausing shows "SPOTIFY PAUSED".
+- Disconnecting releases the I2S output back to AirPlay and DLNA.
+
+Known limitation of this first experiment:
+- Spotify supplies title, artist and album to the TFT, but Spotify cover art
+  is not downloaded in R51.
+- The reconstructed R50 source did not contain its JPEG artwork decoder, so
+  AirPlay JPEG cover decoding is also unavailable in this source build. The
+  stable v3.3.1 R50 BIN remains the reference build for AirPlay cover art.
+
+
+Troubleshooting information to capture
+======================================
+If it does not work, copy the serial log from boot until the failure. Useful
+lines begin with:
+
+    spotify:
+    cspot:
+    source_mgr:
+    audio_output:
+
+Also report which stage failed:
+1. Device does not appear in Spotify.
+2. Device appears but cannot be selected.
+3. Device connects but no track information appears.
+4. Track information appears but there is no sound.
+5. Sound starts and then stops or the ESP32 restarts.
+
+
+Rollback
+========
+Flash your saved v3.3.1 installation BIN. The Spotify test does not change the
+saved Wi-Fi credentials.

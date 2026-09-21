@@ -1,0 +1,21 @@
+ESP32 AirPlay/DLNA v3.1.0 development-source validation
+Date: 2026-08-22
+
+Passed:
+- Version file reports 3.1.0.
+- All newly added C translation units are registered in main/CMakeLists.txt.
+- C delimiter consistency checks passed for all new C files.
+- JavaScript syntax checks passed for index.html and advanced.html.
+- Web page and REST route registration checks passed.
+- Radio-preset and sleep-timer route presence checks passed.
+- GitHub workflow YAML parsing passed.
+- Diff whitespace and conflict-marker checks passed against v0.2.00 source.
+- Target configuration remains ESP32-S3, 16 MB flash and I2S output.
+
+Not performed:
+- ESP-IDF compile/link (Xtensa ESP32-S3 toolchain is not installed here).
+- Flash/hardware test, Wi-Fi association, AirPlay session, DLNA stream, DSP
+  listening test, MQTT broker test, OTA rollback test.
+
+No v3.1.0 binary is included. Files under release-v0200-reference are the
+previously tested v0.2.00 recovery images and must not be treated as v3.1.0.

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Receiver Reliability and Integration</title>
+  <style>
+    :root{color-scheme:dark;--bg:#171b35;--card:#242a45;--field:#171b2d;--text:#f4f5fb;--muted:#a4a8b7;--accent:#ef4768;--ok:#64d997;--bad:#ff8295;--border:#414861}
+    html[data-theme=light]{color-scheme:light;--bg:#eef1f7;--card:#fff;--field:#e7eaf2;--text:#172033;--muted:#677084;--border:#d4d9e5}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px system-ui,sans-serif}.wrap{max-width:980px;margin:auto;padding:24px}h1{font-size:clamp(29px,6vw,48px);margin:8px 0}h2{color:var(--accent);margin-top:0}.subtitle,.muted{color:var(--muted)}section{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:24px;margin:22px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.row{display:flex;flex-wrap:wrap;gap:12px;align-items:end}label{display:grid;gap:7px;margin:12px 0;flex:1;min-width:190px}input,select,button{font:inherit;border-radius:12px;border:1px solid var(--border);padding:13px;background:var(--field);color:var(--text)}button{background:var(--accent);border:0;cursor:pointer;font-weight:650}button.secondary{background:#444b63}button:disabled{opacity:.5;cursor:not-allowed}.metric{background:var(--field);border-radius:14px;padding:15px}.metric small{display:block;color:var(--muted);margin-bottom:6px}.message{min-height:24px;color:var(--ok)}.error{color:var(--bad)}pre{white-space:pre-wrap;word-break:break-word;background:var(--field);padding:16px;border-radius:14px;max-height:420px;overflow:auto}a{color:#8ebaff}.warning{border-left:5px solid #f6b73c;padding-left:14px}.progress{height:12px;background:var(--field);border-radius:8px;overflow:hidden}.progress span{display:block;height:100%;width:0;background:var(--ok)}
+    /* Liquid Glass interface */
+    :root{--bg:#09101f;--card:rgba(27,35,57,.55);--field:rgba(5,11,25,.4);--text:#f7f9ff;--muted:rgba(235,240,255,.62);--accent:#5ac8fa;--ok:#75e6a3;--bad:#ff6961;--border:rgba(255,255,255,.18);--blue:#0a84ff;--glass-shadow:0 24px 70px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.13)}
+    body{min-height:100vh;background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.25),transparent 31%),radial-gradient(circle at 92% 18%,rgba(94,92,230,.25),transparent 35%),linear-gradient(145deg,#080d1b,#171b35 58%,#081426);background-attachment:fixed}body:before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:conic-gradient(from 210deg at 50% 50%,transparent,rgba(90,200,250,.07),transparent 30%,rgba(191,90,242,.08),transparent 64%);filter:blur(70px);animation:glassDrift 18s ease-in-out infinite alternate}.wrap{padding:clamp(16px,4vw,34px)}h1{font-weight:750;letter-spacing:-1.5px;line-height:1.08}h2{color:var(--text);letter-spacing:-.35px}
+    section{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035)),var(--card);-webkit-backdrop-filter:blur(28px) saturate(175%);backdrop-filter:blur(28px) saturate(175%);border-radius:26px;box-shadow:var(--glass-shadow)}section:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.11),transparent 26%,transparent 72%,rgba(90,200,250,.05))}section>*{position:relative}.metric,pre{background:rgba(4,10,24,.25);border:1px solid rgba(255,255,255,.08);border-radius:16px}.metric{padding:17px}.metric strong{font-size:17px}
+    input,select{background:var(--field);border-color:rgba(255,255,255,.13);border-radius:15px;box-shadow:inset 0 1px 1px rgba(0,0,0,.18)}input:focus,select:focus{outline:none;border-color:rgba(90,200,250,.8);box-shadow:0 0 0 4px rgba(10,132,255,.16)}button{border-radius:999px;background:linear-gradient(180deg,#5ac8fa,var(--blue));color:#fff;font-weight:650;box-shadow:0 8px 22px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .18s,filter .18s}button:hover{filter:brightness(1.09);transform:translateY(-1px)}button:active{transform:scale(.98)}button.secondary{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.14);color:var(--text)}.progress{height:10px;background:rgba(4,10,24,.3)}.progress span{background:linear-gradient(90deg,var(--blue),#64d2ff)}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:14px;min-width:min(100%,290px);padding:8px 0;cursor:pointer}.toggle-row input[type=checkbox]{-webkit-appearance:none;appearance:none;position:relative;flex:0 0 51px;width:51px;height:31px;min-width:51px;margin:0;padding:0;border:0;border-radius:999px;background:rgba(120,120,128,.38);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);cursor:pointer;transition:background .2s ease}.toggle-row input[type=checkbox]:before{content:"";position:absolute;width:27px;height:27px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 2px 7px rgba(0,0,0,.28);transition:transform .2s cubic-bezier(.2,.8,.2,1)}.toggle-row input[type=checkbox]:checked{background:#34c759}.toggle-row input[type=checkbox]:checked:before{transform:translateX(20px)}.toggle-row input[type=checkbox]:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(10,132,255,.22)}
+    html[data-theme=light]{--bg:#eef5ff;--card:rgba(255,255,255,.52);--field:rgba(255,255,255,.5);--text:#121826;--muted:rgba(37,48,67,.62);--accent:#007aff;--ok:#147a42;--bad:#c92d2d;--border:rgba(255,255,255,.82);--glass-shadow:0 24px 65px rgba(44,62,94,.14),inset 0 1px 0 #fff}html[data-theme=light] body{background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.38),transparent 31%),radial-gradient(circle at 92% 18%,rgba(175,82,222,.2),transparent 35%),linear-gradient(145deg,#eef7ff,#e9ecf7 60%,#f9fbff)}html[data-theme=light] section{background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(255,255,255,.25)),var(--card)}html[data-theme=light] .metric,html[data-theme=light] pre{background:rgba(255,255,255,.48);border-color:rgba(255,255,255,.78)}html[data-theme=light] button.secondary{background:rgba(255,255,255,.62);border-color:rgba(35,48,70,.14);color:#172033;box-shadow:0 8px 22px rgba(44,62,94,.12),inset 0 1px 0 #fff}html[data-theme=light] button:disabled{opacity:.62;color:#536074}
+    @media(prefers-color-scheme:light){html[data-theme=auto]{--bg:#eef5ff;--card:rgba(255,255,255,.52);--field:rgba(255,255,255,.5);--text:#121826;--muted:rgba(37,48,67,.62);--accent:#007aff;--ok:#147a42;--bad:#c92d2d;--border:rgba(255,255,255,.82);--glass-shadow:0 24px 65px rgba(44,62,94,.14),inset 0 1px 0 #fff}html[data-theme=auto] body{background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.38),transparent 31%),radial-gradient(circle at 92% 18%,rgba(175,82,222,.2),transparent 35%),linear-gradient(145deg,#eef7ff,#e9ecf7 60%,#f9fbff)}html[data-theme=auto] section{background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(255,255,255,.25)),var(--card)}html[data-theme=auto] .metric,html[data-theme=auto] pre{background:rgba(255,255,255,.48);border-color:rgba(255,255,255,.78)}html[data-theme=auto] button.secondary{background:rgba(255,255,255,.62);border-color:rgba(35,48,70,.14);color:#172033;box-shadow:0 8px 22px rgba(44,62,94,.12),inset 0 1px 0 #fff}html[data-theme=auto] button:disabled{opacity:.62;color:#536074}}
+    @keyframes glassDrift{to{transform:translate3d(4%,-3%,0) rotate(5deg)}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}@media(max-width:600px){.wrap{padding:14px}section{padding:20px;border-radius:23px}label{min-width:100%}.row button{flex:1 1 140px}.toggle-row{min-width:100%}}
+  </style>
+</head>
+<body><main class="wrap">
+  <a href="/">← Configuration Panel</a>
+  <h1>Reliability and Integration</h1>
+  <p class="subtitle">AirPlay 2 and DLNA+ Receiver · firmware <span id="version">3.3.0</span></p>
+
+  <section>
+    <h2>Access</h2>
+    <div class="row"><label>Control-panel password<input id="apiKey" type="password" autocomplete="current-password"></label><button id="unlock">Unlock</button></div>
+    <p id="accessMessage" class="message"></p>
+  </section>
+
+  <div id="protected">
+    <section>
+      <h2>Recovery / Safe Mode</h2>
+      <div class="grid"><div class="metric"><small>Mode</small><strong id="safeMode">Loading…</strong></div><div class="metric"><small>Consecutive crashes</small><strong id="crashes">–</strong></div><div class="metric"><small>Settings schema</small><strong id="schema">–</strong></div><div class="metric"><small>Reset reason</small><strong id="resetReason">–</strong></div></div>
+      <p class="muted">After three watchdog or panic resets, the receiver starts only Wi‑Fi and this control panel. AirPlay, DLNA, MQTT and DSP audio remain off until recovery is cleared.</p>
+      <div class="row"><button id="clearRecovery">Clear recovery and use normal mode</button><button id="forceRecovery" class="secondary">Force Safe Mode next boot</button><button class="secondary restart">Restart</button></div>
+      <p id="recoveryMessage" class="message"></p>
+    </section>
+
+    <section>
+      <h2>Wi‑Fi diagnostics and credential testing</h2>
+      <div class="grid"><div class="metric"><small>Connection</small><strong id="wifiConnection">–</strong></div><div class="metric"><small>Signal</small><strong id="wifiRssi">–</strong></div><div class="metric"><small>Retries / last reason</small><strong id="wifiRetries">–</strong></div><div class="metric"><small>Address</small><strong id="wifiAddress">–</strong></div></div>
+      <div class="row"><label>Network name (SSID)<input id="wifiSsid" maxlength="32"></label><label>Password<input id="wifiPassword" type="password" maxlength="64"></label><button id="testWifi">Check and stage test</button></div>
+      <p class="muted warning">A new password is never written over the working network immediately. It is staged, tested after restart, committed only after DHCP succeeds, and automatically rolled back after five failed connection attempts.</p>
+      <p id="wifiMessage" class="message"></p>
+    </section>
+
+    <section>
+      <h2>Home Assistant / MQTT</h2>
+      <div class="row"><label class="toggle-row"><span>Enable MQTT</span><input id="mqttEnabled" type="checkbox" role="switch"></label><label class="toggle-row"><span>Home Assistant discovery</span><input id="mqttDiscovery" type="checkbox" role="switch"></label></div>
+      <label>Broker URI<input id="mqttBroker" placeholder="mqtt://192.168.1.2"></label>
+      <div class="row"><label>Username<input id="mqttUsername"></label><label>Password (leave blank to keep current)<input id="mqttPassword" type="password"></label><label>Topic prefix<input id="mqttTopic" placeholder="airplay-dlna"></label></div>
+      <div class="row"><button id="saveMqtt">Save and reconnect</button><div class="metric"><small>Broker status</small><strong id="mqttStatus">–</strong></div></div>
+      <p id="mqttMessage" class="message"></p>
+    </section>
+
+    <section>
+      <h2>Audio test and balance</h2>
+      <div class="row"><button class="tone" data-channel="1">Test left</button><button class="tone" data-channel="2">Test right</button><button class="tone" data-channel="0">Test both</button></div>
+      <label>Balance: <span id="balanceValue">0.00</span><input id="balance" type="range" min="-1" max="1" step="0.05" value="0"></label>
+      <button id="saveBalance">Save balance</button>
+      <p class="muted">Speaker tests run at a safe level for one second and only while all audio sources are idle.</p><p id="audioMessage" class="message"></p>
+    </section>
+
+    <section>
+      <h2>GitHub firmware updater</h2>
+      <div class="grid"><div class="metric"><small>Installed</small><strong id="installedVersion">–</strong></div><div class="metric"><small>Latest release</small><strong id="latestVersion">–</strong></div><div class="metric"><small>Update state</small><strong id="updateState">–</strong></div></div>
+      <div class="progress"><span id="updateProgress"></span></div>
+      <div class="row" style="margin-top:14px"><button id="checkUpdate">Check GitHub Releases</button><button id="installUpdate" disabled>Install verified OTA</button></div>
+      <p class="muted">Only the matching board OTA asset is accepted. The application name is checked before activation, and bootloader rollback remains enabled until the new firmware passes its stability window.</p><p id="updateMessage" class="message"></p>
+    </section>
+
+    <section>
+      <h2>Status and diagnostics</h2>
+      <div class="row"><button id="refresh" class="secondary">Refresh</button><button id="download" class="secondary">Download report</button></div>
+      <pre id="diagnostics">Loading…</pre>
+    </section>
+  </div>
+</main>
+<script>
+document.documentElement.dataset.theme=localStorage.getItem('receiverTheme')||'auto';
+const $=id=>document.getElementById(id); const stateNames=['Idle','Checking','Update available','Current','Downloading','Ready to reboot','Error'];
+function headers(){const h={'Content-Type':'application/json'};const k=$('apiKey').value||localStorage.getItem('apiKey')||'';if(k)h['X-API-Key']=k;return h}
+async function api(url,options={}){const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),20000);try{const r=await fetch(url,{cache:'no-store',...options,headers:{...headers(),...(options.headers||{})},signal:controller.signal});const text=await r.text();let data={};try{data=JSON.parse(text)}catch{data={success:r.ok,error:text||`HTTP ${r.status}`}}data.http_ok=r.ok;return data}catch(e){return{success:false,error:e.name==='AbortError'?'Request timed out':e.message,http_ok:false}}finally{clearTimeout(timer)}}
+function message(id,result,ok){$(id).textContent=result.success?ok:(result.error||result.request_error||result.message||'Request failed');$(id).classList.toggle('error',!result.success)}
+async function restart(){if(!confirm('Restart the receiver now?'))return;await api('/api/system/restart',{method:'POST',body:'{}'})}
+async function loadRecovery(){const r=await api('/api/v1/recovery');$('safeMode').textContent=r.safe_mode?'SAFE MODE':'Normal mode';$('crashes').textContent=r.consecutive_crashes??'–';$('schema').textContent=r.settings_schema??'–';$('resetReason').textContent=r.reset_reason??'–';return r}
+async function recovery(action){const r=await api('/api/v1/recovery',{method:'POST',body:JSON.stringify({action})});message('recoveryMessage',r,r.success?'Saved. Restart to apply.':'');await loadRecovery()}
+async function loadWifi(){const r=await api('/api/v1/wifi/diagnostics');$('wifiConnection').textContent=r.connected?`${r.ssid} (${r.channel})`:r.setup_ap_enabled?'Setup AP active':'Disconnected';$('wifiRssi').textContent=r.connected?`${r.rssi} dBm`:'–';$('wifiRetries').textContent=`${r.retry_count??0} / ${r.last_disconnect_reason??0}`;$('wifiAddress').textContent=r.ip||'–';return r}
+async function testWifi(){const r=await api('/api/v1/wifi/test',{method:'POST',body:JSON.stringify({ssid:$('wifiSsid').value.trim(),password:$('wifiPassword').value})});message('wifiMessage',r,r.already_connected?r.message:r.staged?'Credentials staged. Restart to perform the real connection test.':r.message);if(r.restart_required&&confirm('Credentials are staged. Restart and test them now?'))restart()}
+async function loadMqtt(){const r=await api('/api/v1/mqtt');if(r.success){$('mqttEnabled').checked=!!r.enabled;$('mqttDiscovery').checked=!!r.home_assistant_discovery;$('mqttBroker').value=r.broker_uri||'';$('mqttUsername').value=r.username||'';$('mqttTopic').value=r.topic_prefix||'';$('mqttStatus').textContent=r.enabled?(r.connected?'Connected':'Disconnected'):'Disabled'}return r}
+async function saveMqtt(){const body={enabled:$('mqttEnabled').checked,home_assistant_discovery:$('mqttDiscovery').checked,broker_uri:$('mqttBroker').value.trim(),username:$('mqttUsername').value.trim(),topic_prefix:$('mqttTopic').value.trim()};if($('mqttPassword').value)body.password=$('mqttPassword').value;const r=await api('/api/v1/mqtt',{method:'POST',body:JSON.stringify(body)});message('mqttMessage',r,'MQTT settings saved.');$('mqttPassword').value='';await loadMqtt()}
+async function loadDsp(){const r=await api('/api/v1/dsp');if(r.success){$('balance').value=r.balance??0;$('balanceValue').textContent=Number($('balance').value).toFixed(2)}return r}
+async function saveBalance(){const current=await api('/api/v1/dsp');if(!current.success)return message('audioMessage',current,'');current.balance=Number($('balance').value);delete current.success;delete current.http_ok;const r=await api('/api/v1/dsp',{method:'POST',body:JSON.stringify(current)});message('audioMessage',r,'Balance saved.')}
+async function tone(channel){const r=await api('/api/v1/audio/test',{method:'POST',body:JSON.stringify({channel,frequency_hz:440,duration_ms:1000})});message('audioMessage',r,'Speaker test started.')}
+function showUpdate(r){$('installedVersion').textContent=r.current_version||'–';$('latestVersion').textContent=r.latest_version||'Not checked';$('updateState').textContent=stateNames[r.state]||r.state;$('updateProgress').style.width=`${r.progress_percent||0}%`;$('installUpdate').disabled=!r.update_available||r.state!==2;if(r.error){$('updateMessage').textContent=r.error;$('updateMessage').classList.add('error')}}
+async function update(action){$('updateMessage').textContent=action==='check'?'Checking GitHub…':'Starting update…';const r=await api('/api/v1/github-ota',{method:'POST',body:JSON.stringify({action})});showUpdate(r);message('updateMessage',r,action==='check'?(r.update_available?'Update available.':'Firmware is current.'):'Update started. Keep power connected.');if(action==='install'&&r.success)pollUpdate()}
+async function pollUpdate(){for(let i=0;i<180;i++){await new Promise(r=>setTimeout(r,2000));const s=await api('/api/v1/github-ota');showUpdate(s);if(s.state===5||s.state===6)break}}
+async function refresh(){const results=await Promise.all([api('/api/v1/status'),api('/api/v1/health'),loadRecovery(),loadWifi(),loadMqtt(),loadDsp(),api('/api/v1/github-ota')]);showUpdate(results[6]);if(results[0].version){$('version').textContent=results[0].version;$('installedVersion').textContent=results[0].version}$('diagnostics').textContent=JSON.stringify({refreshed_at:new Date().toISOString(),status:results[0],health:results[1],recovery:results[2],wifi:results[3],mqtt:results[4],dsp:results[5],update:results[6]},null,2)}
+function download(){const blob=new Blob([$('diagnostics').textContent],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='receiver-reliability-report.json';a.click();URL.revokeObjectURL(url)}
+$('unlock').onclick=async()=>{localStorage.setItem('apiKey',$('apiKey').value);const r=await api('/api/v1/auth');message('accessMessage',r,'Controls unlocked.');if(r.success)refresh()};$('clearRecovery').onclick=()=>recovery('clear');$('forceRecovery').onclick=()=>recovery('force');document.querySelectorAll('.restart').forEach(b=>b.onclick=restart);$('testWifi').onclick=testWifi;$('saveMqtt').onclick=saveMqtt;document.querySelectorAll('.tone').forEach(b=>b.onclick=()=>tone(Number(b.dataset.channel)));$('balance').oninput=()=>$('balanceValue').textContent=Number($('balance').value).toFixed(2);$('saveBalance').onclick=saveBalance;$('checkUpdate').onclick=()=>update('check');$('installUpdate').onclick=()=>update('install');$('refresh').onclick=refresh;$('download').onclick=download;$('apiKey').value=localStorage.getItem('apiKey')||'';refresh();
+</script></body></html>

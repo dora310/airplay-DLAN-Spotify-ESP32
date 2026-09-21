@@ -1,0 +1,81 @@
+WI-FI STATUS + MUSIC SPECTRUM LED UPDATE R50
+=============================================
+
+This cumulative replacement includes the R43-R49 build, Wi-Fi status,
+sender-name and DLNA/AirPlay display updates.
+
+ONBOARD RGB LED (GPIO 48)
+-------------------------
+
+  * Not connected / setup mode: slow flashing RED.
+  * Connecting, authenticating or waiting for DHCP: fast flashing GREEN.
+  * Connected to Wi-Fi and ready: solid BLUE.
+  * Music playing: full-colour spectrum that reacts to the audio level and
+    bass content.
+  * Paused or AirPlay connected without playback: returns to solid BLUE.
+
+The music spectrum has priority only while audio is actively playing. When
+playback stops or the network state changes, the Wi-Fi indication returns.
+
+CONNECTED SCREEN UPDATE
+-----------------------
+
+  * When a phone is connected but no music is playing, the upper information
+    row shows the connected Wi-Fi network instead of repeating the phone name.
+  * The bottom status keeps the phone name and shows CONNECTED.
+  * When track metadata arrives, the display automatically switches to the
+    song, artist, album and artwork view with the phone name in the status row.
+
+AIRPLAY DISPLAY UPDATE
+----------------------
+
+  * Shows the connected phone name beside PLAYING or PAUSED while track
+    metadata and artwork are visible.
+  * Shows the phone name only once while waiting for music metadata.
+  * Keeps song title, artist, album, artwork, progress and time information.
+
+WI-FI HOTFIX
+------------
+
+  * Restores the R44 Wi-Fi status polling behaviour changed in R45.
+  * Keeps the connected Wi-Fi name visible on idle and connected screens.
+  * Keeps the AirPlay sender name visible during active AirPlay playback.
+  * Retains the automatic DLNA/AirPlay screen switching added in R46.
+
+DISPLAY BEHAVIOR
+----------------
+
+  * Idle: AirPlay Ready plus the connected Wi-Fi network name.
+  * DLNA media selected: dedicated DLNA screen appears immediately.
+  * DLNA playing/paused: track metadata remains visible and the bottom status
+    reads DLNA PLAYING or DLNA PAUSED.
+  * AirPlay connects: the existing AirPlay artwork/metadata display is restored
+    automatically and has priority over DLNA.
+  * DLNA ends: the display returns to the normal idle screen.
+
+DLNA/UPnP does not maintain a permanent controller connection. For that reason,
+the display switches when a controller selects media, starts playback or pauses
+playback, rather than when a device merely discovers the receiver.
+
+INSTALLATION
+------------
+
+1. Extract this ZIP.
+2. Copy all contents into the root of your GitHub repository.
+3. Preserve the folder structure and replace the existing files.
+4. Delete the root dependencies.lock file if it is still tracked.
+5. Commit and push everything.
+6. Run GitHub Actions -> Build ESP32-S3 installation BIN.
+
+IMPORTANT FILES
+---------------
+
+  components/display/display_st7789.c
+  components/display/display.c
+  components/display/include/display.h
+  main/network/dlna_renderer.c
+  main/network/wifi.c
+  main/led.c
+  main/led.h
+
+The package also retains the cumulative R43/R44 workflow and LVGL build files.

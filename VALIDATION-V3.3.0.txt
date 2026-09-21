@@ -1,0 +1,22 @@
+AirPlay 2 and DLNA+ Receiver v3.3.0 validation
+
+PASS  version.txt contains 3.3.0
+PASS  generated root sdkconfig is absent
+PASS  sdkconfig.defaults and target default profiles are retained
+PASS  build workflow removes stale sdkconfig and build output per matrix job
+PASS  build workflow emits target-specific install and OTA assets
+PASS  GitHub Actions workflow YAML parses successfully
+PASS  all web pages parse as HTML
+PASS  new C source files pass lexical delimiter validation
+PASS  new modules are registered in main/CMakeLists.txt
+PASS  certificate bundle and bootloader OTA rollback are enabled
+PASS  reliability page is linked and served at /reliability
+PASS  embedded JavaScript parses on all six control-panel pages
+PASS  Liquid Glass CSS blocks have balanced syntax on all six pages
+PASS  Home Assistant discovery buffer exceeds the compiler-proven maximum
+PASS  all checkbox controls retain their IDs and expose switch semantics
+PASS  light and automatic-light modes define readable secondary-button text
+
+ESP-IDF compilation is intentionally delegated to the included GitHub Actions
+workflow. A local ESP-IDF 5.5/Xtensa toolchain was not available in the
+workspace, so no claim of a completed firmware binary build is made here.

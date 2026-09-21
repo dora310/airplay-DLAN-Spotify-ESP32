@@ -1,0 +1,39 @@
+name: Format source code
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out main branch
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Install required clang-format
+        run: |
+          python3 -m pip install --user -r requirements-dev.txt
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Format source files
+        run: bash scripts/format.sh
+
+      - name: Commit formatted source
+        shell: bash
+        run: |
+          if git diff --quiet -- main components; then
+            echo "Source files are already formatted"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add main components
+          git commit -m "Format source with clang-format 22.1.4"
+          git push origin HEAD:main

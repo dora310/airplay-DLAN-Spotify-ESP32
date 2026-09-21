@@ -1,0 +1,36 @@
+menu "Spotify Connect (experimental)"
+
+    config SPOTIFY_CONNECT_ENABLE
+        bool "Enable experimental Spotify Connect receiver"
+        default y if IDF_TARGET_ESP32S3
+        help
+            Advertise this receiver in the Spotify app and decode Spotify
+            Premium streams with the embedded cspot library. This is an
+            unofficial experimental integration and may need updates if
+            Spotify changes its service.
+
+    if SPOTIFY_CONNECT_ENABLE
+
+        config SPOTIFY_CONNECT_BITRATE
+            int "Spotify Ogg/Vorbis bitrate (kbps)"
+            range 96 320
+            default 160
+
+        config SPOTIFY_CLIENT_ID
+            string "Spotify Developer client ID"
+            default ""
+            help
+                Client ID from developer.spotify.com. Keep credentials out of
+                public source repositories; the R51 workflow can inject this
+                value from a GitHub Actions secret.
+
+        config SPOTIFY_CLIENT_SECRET
+            string "Spotify Developer client secret"
+            default ""
+            help
+                Client secret paired with SPOTIFY_CLIENT_ID. This test build
+                embeds the value in the firmware; do not distribute the BIN.
+
+    endif
+
+endmenu

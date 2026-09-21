@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AirPlay and DLNA Receiver Advanced</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --background: #15182b;
+      --panel: #24283f;
+      --field: #111426;
+      --text: #f4f5ff;
+      --muted: #aeb2c6;
+      --accent: #ef476f;
+      --link: #7ad7ff;
+      --good: #b7efcf;
+      --error: #ff9aa9;
+    }
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --background: #eef1f7;
+      --panel: #ffffff;
+      --field: #e5e9f2;
+      --text: #172033;
+      --muted: #596174;
+      --accent: #d92f5b;
+      --link: #006a9c;
+      --good: #176c45;
+      --error: #a5162c;
+    }
+    @media (prefers-color-scheme: light) {
+      :root[data-theme="auto"] {
+        color-scheme: light;
+        --background: #eef1f7; --panel: #ffffff; --field: #e5e9f2;
+        --text: #172033; --muted: #596174; --accent: #d92f5b;
+        --link: #006a9c; --good: #176c45; --error: #a5162c;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font: 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--background);
+      color: var(--text);
+      max-width: 850px;
+      margin: auto;
+      padding: 24px;
+    }
+    section {
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    button, input, select {
+      font: inherit;
+      padding: 10px;
+      margin: 5px;
+      border: 0;
+      border-radius: 8px;
+    }
+    button {
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled { cursor: wait; opacity: 0.65; }
+    input, select {
+      background: var(--field);
+      color: var(--text);
+      min-width: 240px;
+    }
+    input[type="checkbox"] { min-width: auto; }
+    pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      color: var(--good);
+      min-height: 1.5em;
+    }
+    pre.error { color: var(--error); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    label { display: block; margin: 8px 0; }
+    .muted { color: var(--muted); }
+    .message { min-height: 1.5em; color: var(--good); }
+    .preset-list { display: grid; gap: 8px; margin-top: 12px; }
+    .preset-item {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 8px; padding: 10px; background: var(--field); border-radius: 8px;
+    }
+    .preset-item button { margin: 0; }
+    .secondary { background: #454b67; }
+    .eq-grid { display: grid; gap: 12px; margin: 14px 0; }
+    .eq-band {
+      display: grid; grid-template-columns: 78px 1fr 62px;
+      align-items: center; gap: 10px;
+    }
+    .eq-band input { min-width: 0; width: 100%; margin: 0; accent-color: var(--accent); }
+    .eq-value { text-align: right; color: var(--good); font-variant-numeric: tabular-nums; }
+    .playback-icon { font-size: 1.1em; margin-right: 5px; }
+    a { color: var(--link); }
+    body.locked section:not(.access-section) { display: none; }
+    .danger-zone { border: 1px solid var(--error); }
+    .log-box { max-height: 320px; overflow: auto; background: var(--field); padding: 12px; }
+    /* Liquid Glass interface */
+    :root{--background:#09101f;--panel:rgba(27,35,57,.55);--field:rgba(5,11,25,.4);--text:#f7f9ff;--muted:rgba(235,240,255,.62);--accent:#0a84ff;--link:#64d2ff;--good:#75e6a3;--error:#ff6961;--edge:rgba(255,255,255,.18);--glass-shadow:0 24px 70px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.13)}
+    body{max-width:980px;min-height:100vh;background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.25),transparent 31%),radial-gradient(circle at 92% 18%,rgba(94,92,230,.25),transparent 35%),linear-gradient(145deg,#080d1b,#171b35 58%,#081426);background-attachment:fixed;padding:clamp(16px,4vw,34px)}
+    body:before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:conic-gradient(from 210deg at 50% 50%,transparent,rgba(90,200,250,.07),transparent 30%,rgba(191,90,242,.08),transparent 64%);filter:blur(70px);animation:glassDrift 18s ease-in-out infinite alternate}
+    h1{font-size:clamp(30px,6vw,46px);letter-spacing:-1.5px;line-height:1.08;margin:16px 0 10px}h2{letter-spacing:-.35px}h3{color:var(--muted)}
+    section{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035)),var(--panel);-webkit-backdrop-filter:blur(28px) saturate(175%);backdrop-filter:blur(28px) saturate(175%);border:1px solid var(--edge);border-radius:26px;padding:24px;margin:19px 0;box-shadow:var(--glass-shadow)}section:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.11),transparent 26%,transparent 72%,rgba(90,200,250,.05))}section>*{position:relative}
+    button,input,select{border-radius:15px;padding:13px 15px;margin:5px;border:1px solid rgba(255,255,255,.13)}input,select{background:var(--field);box-shadow:inset 0 1px 1px rgba(0,0,0,.18)}input:focus,select:focus{outline:none;border-color:rgba(90,200,250,.8);box-shadow:0 0 0 4px rgba(10,132,255,.16)}button{border-radius:999px;border-color:transparent;background:linear-gradient(180deg,#5ac8fa,var(--accent));color:#fff;font-weight:650;box-shadow:0 8px 22px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.22);transition:transform .18s,filter .18s}button:hover{filter:brightness(1.09);transform:translateY(-1px)}button:active{transform:scale(.98)}button.secondary,.secondary{background:rgba(255,255,255,.11);border-color:rgba(255,255,255,.14);color:var(--text)}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:14px;width:min(100%,430px);padding:10px 0;cursor:pointer}.toggle-row input[type=checkbox]{-webkit-appearance:none;appearance:none;position:relative;flex:0 0 51px;width:51px;height:31px;min-width:51px;margin:0;padding:0;border:0;border-radius:999px;background:rgba(120,120,128,.38);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);cursor:pointer;transition:background .2s ease}.toggle-row input[type=checkbox]:before{content:"";position:absolute;width:27px;height:27px;left:2px;top:2px;border-radius:50%;background:#fff;box-shadow:0 2px 7px rgba(0,0,0,.28);transition:transform .2s cubic-bezier(.2,.8,.2,1)}.toggle-row input[type=checkbox]:checked{background:#34c759}.toggle-row input[type=checkbox]:checked:before{transform:translateX(20px)}.toggle-row input[type=checkbox]:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(10,132,255,.22)}
+    .preset-item,.log-box{background:rgba(4,10,24,.25);border:1px solid rgba(255,255,255,.08);border-radius:16px}.danger-zone{border-color:rgba(255,105,97,.48)}.eq-band input{accent-color:var(--accent)}
+    :root[data-theme=light]{--background:#eef5ff;--panel:rgba(255,255,255,.52);--field:rgba(255,255,255,.5);--text:#121826;--muted:rgba(37,48,67,.62);--accent:#007aff;--link:#006edc;--good:#147a42;--error:#c92d2d;--edge:rgba(255,255,255,.82);--glass-shadow:0 24px 65px rgba(44,62,94,.14),inset 0 1px 0 #fff}:root[data-theme=light] body{background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.38),transparent 31%),radial-gradient(circle at 92% 18%,rgba(175,82,222,.2),transparent 35%),linear-gradient(145deg,#eef7ff,#e9ecf7 60%,#f9fbff)}:root[data-theme=light] section{background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(255,255,255,.25)),var(--panel)}:root[data-theme=light] .preset-item,:root[data-theme=light] .log-box{background:rgba(255,255,255,.48);border-color:rgba(255,255,255,.78)}:root[data-theme=light] button.secondary,:root[data-theme=light] .secondary{background:rgba(255,255,255,.62);border-color:rgba(35,48,70,.14);color:#172033;box-shadow:0 8px 22px rgba(44,62,94,.12),inset 0 1px 0 #fff}:root[data-theme=light] button:disabled{opacity:.62;color:#536074}
+    @media(prefers-color-scheme:light){:root[data-theme=auto]{--background:#eef5ff;--panel:rgba(255,255,255,.52);--field:rgba(255,255,255,.5);--text:#121826;--muted:rgba(37,48,67,.62);--accent:#007aff;--link:#006edc;--good:#147a42;--error:#c92d2d;--edge:rgba(255,255,255,.82);--glass-shadow:0 24px 65px rgba(44,62,94,.14),inset 0 1px 0 #fff}:root[data-theme=auto] body{background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.38),transparent 31%),radial-gradient(circle at 92% 18%,rgba(175,82,222,.2),transparent 35%),linear-gradient(145deg,#eef7ff,#e9ecf7 60%,#f9fbff)}:root[data-theme=auto] section{background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(255,255,255,.25)),var(--panel)}:root[data-theme=auto] button.secondary,:root[data-theme=auto] .secondary{background:rgba(255,255,255,.62);border-color:rgba(35,48,70,.14);color:#172033;box-shadow:0 8px 22px rgba(44,62,94,.12),inset 0 1px 0 #fff}:root[data-theme=auto] button:disabled{opacity:.62;color:#536074}}
+    @keyframes glassDrift{to{transform:translate3d(4%,-3%,0) rotate(5deg)}}@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}@media(max-width:600px){body{padding:14px}section{padding:20px;border-radius:23px}input,select{min-width:0;width:100%;margin:4px 0}.row button{flex:1 1 140px}}
+  </style>
+</head>
+<body class="locked">
+  <h1>AirPlay and DLNA Receiver <small id="pageVersion"></small></h1>
+  <p><a href="/">&larr; Basic settings</a> · <a href="/reliability">Reliability and integration</a></p>
+
+  <section class="access-section">
+    <h2>API access</h2>
+    <label>
+      Current API password
+      <input id="apiKey" type="password" autocomplete="current-password"
+             placeholder="Required only when protection is enabled">
+    </label>
+    <button id="saveApiKeyButton" type="button">Remember API password</button>
+    <button id="unlockButton" type="button">Unlock controls</button>
+    <label>
+      New API password
+      <input id="newPassword" type="password" autocomplete="new-password"
+             placeholder="Enter 8-64 characters">
+    </label>
+    <button id="setPasswordButton" type="button">Set/change password</button>
+    <p class="muted">
+      The current password authorizes protected requests. The new password must
+      contain 8-64 characters. Enter an empty new password to disable protection.
+    </p>
+    <p id="securityMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Playback</h2>
+    <div class="row">
+      <button type="button" data-control="play_pause"><span class="playback-icon">⏯</span>Play/Pause</button>
+      <button type="button" data-control="previous"><span class="playback-icon">⏮</span>Previous</button>
+      <button type="button" data-control="next"><span class="playback-icon">⏭</span>Next</button>
+      <button type="button" data-control="volume_down"><span class="playback-icon">🔉</span>Volume &minus;</button>
+      <button type="button" data-control="volume_up"><span class="playback-icon">🔊</span>Volume +</button>
+      <button type="button" data-control="mute"><span class="playback-icon">🔇</span>Mute</button>
+    </div>
+    <p id="playbackMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Internet radio</h2>
+    <input id="radioUrl" type="url" inputmode="url"
+           placeholder="https://station/stream.mp3">
+    <button id="radioButton" type="button">Play URL</button>
+    <h3>Favourite stations</h3>
+    <div class="row">
+      <select id="presetSlot" aria-label="Preset slot">
+        <option value="0">Preset 1</option><option value="1">Preset 2</option>
+        <option value="2">Preset 3</option><option value="3">Preset 4</option>
+        <option value="4">Preset 5</option><option value="5">Preset 6</option>
+        <option value="6">Preset 7</option><option value="7">Preset 8</option>
+      </select>
+      <input id="presetName" maxlength="31" placeholder="Station name">
+      <button id="savePresetButton" type="button">Save favourite</button>
+      <button id="clearPresetButton" class="secondary" type="button">Clear slot</button>
+    </div>
+    <div id="presetList" class="preset-list"></div>
+    <p id="radioMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Sleep timer</h2>
+    <div class="row">
+      <select id="sleepMinutes">
+        <option value="15">15 minutes</option>
+        <option value="30">30 minutes</option>
+        <option value="45">45 minutes</option>
+        <option value="60">1 hour</option>
+        <option value="90">1.5 hours</option>
+        <option value="120">2 hours</option>
+      </select>
+      <button id="startSleepButton" type="button">Start timer</button>
+      <button id="cancelSleepButton" class="secondary" type="button">Cancel timer</button>
+    </div>
+    <p class="muted">When the timer expires, the active audio source is muted.</p>
+    <p id="sleepMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>DSP</h2>
+    <h3>5-band equalizer</h3>
+    <div class="eq-grid">
+      <label class="eq-band"><span>80 Hz</span><input id="eq0" type="range" min="-12" max="12" step="0.5" value="0"><span id="eq0Value" class="eq-value">0.0 dB</span></label>
+      <label class="eq-band"><span>250 Hz</span><input id="eq1" type="range" min="-12" max="12" step="0.5" value="0"><span id="eq1Value" class="eq-value">0.0 dB</span></label>
+      <label class="eq-band"><span>1 kHz</span><input id="eq2" type="range" min="-12" max="12" step="0.5" value="0"><span id="eq2Value" class="eq-value">0.0 dB</span></label>
+      <label class="eq-band"><span>4 kHz</span><input id="eq3" type="range" min="-12" max="12" step="0.5" value="0"><span id="eq3Value" class="eq-value">0.0 dB</span></label>
+      <label class="eq-band"><span>12 kHz</span><input id="eq4" type="range" min="-12" max="12" step="0.5" value="0"><span id="eq4Value" class="eq-value">0.0 dB</span></label>
+    </div>
+    <div class="row">
+      <button id="bassBoostButton" type="button">🔊 Bass Boost</button>
+      <button id="loudnessButton" type="button">📈 Loudness</button>
+      <button id="flatButton" type="button" class="secondary">↺ Flat / Reset</button>
+    </div>
+    <div class="row">
+      <select id="eqPreset" aria-label="Equalizer preset">
+        <option value="flat">Flat</option>
+        <option value="bass">Bass Boost</option>
+        <option value="loudness">Loudness</option>
+        <option value="vocal">Vocal</option>
+        <option value="rock">Rock</option>
+        <option value="pop">Pop</option>
+        <option value="jazz">Jazz</option>
+        <option value="classical">Classical</option>
+        <option value="night">Night</option>
+      </select>
+      <button id="applyPresetButton" type="button">Apply Preset</button>
+      <button id="saveDspButton" type="button">Save Custom Preset</button>
+    </div>
+    <label class="toggle-row"><span>Enable DSP</span><input id="dspOn" type="checkbox" role="switch"></label>
+    <label class="toggle-row"><span>Limiter</span><input id="limiter" type="checkbox" role="switch" checked></label>
+    <label class="toggle-row"><span>Normalization</span><input id="normalization" type="checkbox" role="switch"></label>
+    <label>
+      Balance -1 to +1
+      <input id="balance" type="number" min="-1" max="1" step="0.05" value="0">
+    </label>
+    <label>
+      Channel
+      <select id="channel">
+        <option value="0">Stereo</option>
+        <option value="1">Mono</option>
+        <option value="2">Left</option>
+        <option value="3">Right</option>
+        <option value="4">Swap</option>
+      </select>
+    </label>
+    <label>
+      Crossover
+      <select id="cross">
+        <option value="0">Off</option>
+        <option value="1">High-pass</option>
+        <option value="2">Low-pass</option>
+      </select>
+      <input id="crossHz" type="number" value="80" min="30" max="18000"> Hz
+    </label>
+    <p class="muted">Positive EQ gain automatically enables the limiter. Saved settings are restored after restart.</p>
+    <p id="dspMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Audio protection</h2>
+    <label class="toggle-row"><span>Enable speaker protection</span><input id="speakerProtection" type="checkbox" role="switch"></label>
+    <label>
+      Protection threshold
+      <input id="speakerThreshold" type="range" min="50" max="98" value="90">
+      <span id="speakerThresholdValue">90%</span>
+    </label>
+    <p id="protectionStats" class="muted">Loading protection counters...</p>
+    <button id="saveProtectionButton" type="button">Save protection</button>
+    <button id="resetCountersButton" class="secondary" type="button">Reset counters</button>
+    <p id="protectionMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Scheduled restart</h2>
+    <label class="toggle-row"><span>Enable automatic restart</span><input id="scheduledRestart" type="checkbox" role="switch"></label>
+    <label>
+      Restart interval
+      <select id="restartHours">
+        <option value="12">Every 12 hours</option>
+        <option value="24">Every 24 hours</option>
+        <option value="48">Every 48 hours</option>
+        <option value="168">Every 7 days</option>
+      </select>
+    </label>
+    <p class="muted">The restart becomes due at the selected uptime interval, but occurs only after AirPlay, DLNA and radio are idle.</p>
+    <button id="saveRestartButton" type="button">Save restart schedule</button>
+    <p id="restartMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Interface theme</h2>
+    <select id="themeSelect">
+      <option value="0">Follow device/browser</option>
+      <option value="1">Dark</option>
+      <option value="2">Light</option>
+    </select>
+    <button id="saveThemeButton" type="button">Save theme</button>
+    <p id="themeMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Backup and restore</h2>
+    <button id="downloadBackupButton" type="button">Download all settings</button>
+    <input id="restoreFile" type="file" accept="application/json,.json">
+    <button id="restoreBackupButton" type="button">Restore settings</button>
+    <p class="muted">The authenticated backup includes Wi-Fi credentials and the access-password digest. Store it securely. Restart after restoring.</p>
+    <p id="backupMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Persistent diagnostic log</h2>
+    <button id="loadPersistentLogButton" type="button">Refresh retained errors</button>
+    <button id="clearPersistentLogButton" class="secondary" type="button">Clear retained errors</button>
+    <pre id="persistentLog" class="log-box">Not loaded.</pre>
+  </section>
+
+  <section class="danger-zone">
+    <h2>Factory reset</h2>
+    <p class="muted">This erases Wi-Fi, device, DSP, radio, protection, schedule and password settings.</p>
+    <input id="factoryConfirmation" type="text" autocomplete="off"
+           placeholder="Type ERASE ALL SETTINGS">
+    <button id="factoryResetButton" type="button">Erase all settings</button>
+    <p id="factoryMessage" class="message"></p>
+  </section>
+
+  <section>
+    <h2>Status and diagnostics</h2>
+    <button id="refreshButton" type="button">Refresh</button>
+    <button id="downloadDiagnosticsButton" class="secondary" type="button">Download JSON</button>
+    <pre id="diagnosticStatus" aria-live="polite">Loading...</pre>
+  </section>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const elements = {
+        apiKey: document.getElementById('apiKey'),
+        newPassword: document.getElementById('newPassword'),
+        pageVersion: document.getElementById('pageVersion'),
+        securityMessage: document.getElementById('securityMessage'),
+        playbackMessage: document.getElementById('playbackMessage'),
+        radioUrl: document.getElementById('radioUrl'),
+        radioMessage: document.getElementById('radioMessage'),
+        presetSlot: document.getElementById('presetSlot'),
+        presetName: document.getElementById('presetName'),
+        presetList: document.getElementById('presetList'),
+        sleepMinutes: document.getElementById('sleepMinutes'),
+        sleepMessage: document.getElementById('sleepMessage'),
+        dspOn: document.getElementById('dspOn'),
+        limiter: document.getElementById('limiter'),
+        normalization: document.getElementById('normalization'),
+        balance: document.getElementById('balance'),
+        channel: document.getElementById('channel'),
+        cross: document.getElementById('cross'),
+        crossHz: document.getElementById('crossHz'),
+        eqPreset: document.getElementById('eqPreset'),
+        eqGains: [0, 1, 2, 3, 4].map(index =>
+          document.getElementById(`eq${index}`)),
+        eqValues: [0, 1, 2, 3, 4].map(index =>
+          document.getElementById(`eq${index}Value`)),
+        dspMessage: document.getElementById('dspMessage'),
+        refreshButton: document.getElementById('refreshButton'),
+        diagnosticStatus: document.getElementById('diagnosticStatus'),
+        speakerProtection: document.getElementById('speakerProtection'),
+        speakerThreshold: document.getElementById('speakerThreshold'),
+        speakerThresholdValue: document.getElementById('speakerThresholdValue'),
+        protectionStats: document.getElementById('protectionStats'),
+        protectionMessage: document.getElementById('protectionMessage'),
+        scheduledRestart: document.getElementById('scheduledRestart'),
+        restartHours: document.getElementById('restartHours'),
+        restartMessage: document.getElementById('restartMessage'),
+        themeSelect: document.getElementById('themeSelect'),
+        themeMessage: document.getElementById('themeMessage'),
+        backupMessage: document.getElementById('backupMessage'),
+        restoreFile: document.getElementById('restoreFile'),
+        persistentLog: document.getElementById('persistentLog'),
+        factoryConfirmation: document.getElementById('factoryConfirmation'),
+        factoryMessage: document.getElementById('factoryMessage')
+      };
+
+      const eqFrequencies = [80, 250, 1000, 4000, 12000];
+      const eqPresets = {
+        flat:      { label: 'Flat', gains: [0, 0, 0, 0, 0] },
+        bass:      { label: 'Bass Boost', gains: [6, 4, 1, 0, 0] },
+        loudness:  { label: 'Loudness', gains: [5, 3, 0, 2, 4] },
+        vocal:     { label: 'Vocal', gains: [-2, -1, 3, 4, 2] },
+        rock:      { label: 'Rock', gains: [4, 2, -1, 3, 4] },
+        pop:       { label: 'Pop', gains: [2, 3, 1, 3, 2] },
+        jazz:      { label: 'Jazz', gains: [3, 1, 0, 2, 4] },
+        classical: { label: 'Classical', gains: [2, 0, -1, 2, 3] },
+        night:     { label: 'Night', gains: [1, 2, 2, 1, 0], normalization: true }
+      };
+
+      elements.apiKey.value = localStorage.getItem('apiKey') || '';
+      const storedTheme = localStorage.getItem('receiverTheme') || 'auto';
+      document.documentElement.dataset.theme = storedTheme;
+      function requestHeaders() {
+        const headers = { Accept: 'application/json' };
+        const key = elements.apiKey.value ||
+                    localStorage.getItem('apiKey') || '';
+        if (key) headers['X-API-Key'] = key;
+        return headers;
+      }
+
+      async function api(url, options = {}) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        try {
+          const response = await fetch(url, {
+            ...options,
+            cache: 'no-store',
+            signal: controller.signal,
+            headers: {
+              ...requestHeaders(),
+              ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+              ...(options.headers || {})
+            }
+          });
+          const text = await response.text();
+          let data;
+          try {
+            data = text ? JSON.parse(text) : {};
+          } catch (error) {
+            data = {
+              success: false,
+              error: text || 'The device returned invalid JSON.'
+            };
+          }
+          data.http_status = response.status;
+          data.http_ok = response.ok;
+          return data;
+        } catch (error) {
+          return {
+            success: false,
+            error: error.name === 'AbortError'
+              ? 'Request timed out after 8 seconds.'
+              : `Network request failed: ${error.message}`,
+            http_status: 0,
+            http_ok: false
+          };
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+
+      function resultMessage(result, successText) {
+        if (result && result.success && result.http_ok !== false) {
+          return successText;
+        }
+        return (result && result.error) ||
+          `Request failed with HTTP status ${result ? result.http_status : 'unknown'}.`;
+      }
+
+      function applyDspValues(dsp) {
+        if (!dsp || !dsp.success) return;
+        elements.dspOn.checked = Boolean(dsp.enabled);
+        elements.limiter.checked = Boolean(dsp.limiter);
+        elements.normalization.checked = Boolean(dsp.normalization);
+        elements.balance.value = dsp.balance ?? 0;
+        elements.channel.value = dsp.channel ?? 0;
+        elements.cross.value = dsp.crossover ?? 0;
+        elements.crossHz.value = dsp.crossover_hz ?? 80;
+        if (Array.isArray(dsp.bands)) {
+          elements.eqGains.forEach((slider, index) => {
+            slider.value = dsp.bands[index]?.gain_db ?? 0;
+          });
+        }
+        updateEqDisplays();
+      }
+
+      function updateEqDisplays() {
+        elements.eqGains.forEach((slider, index) => {
+          const gain = Number(slider.value);
+          elements.eqValues[index].textContent =
+            `${gain > 0 ? '+' : ''}${gain.toFixed(1)} dB`;
+        });
+      }
+
+      async function refreshDiagnostics() {
+        elements.refreshButton.disabled = true;
+        elements.refreshButton.textContent = 'Refreshing...';
+        elements.diagnosticStatus.classList.remove('error');
+        elements.diagnosticStatus.textContent = 'Loading...';
+        try {
+          const [statusResult, healthResult, dspResult] = await Promise.all([
+            api('/api/v1/status'),
+            api('/api/v1/health'),
+            api('/api/v1/dsp')
+          ]);
+
+          if (statusResult.version) {
+            elements.pageVersion.textContent = `v${statusResult.version}`;
+          }
+          applyDspValues(dspResult);
+
+          const failed = [statusResult, healthResult, dspResult]
+            .some(result =>
+              result.http_ok === false || result.success === false);
+          elements.diagnosticStatus.classList.toggle('error', failed);
+          elements.diagnosticStatus.textContent = JSON.stringify({
+            refreshed_at: new Date().toLocaleString(),
+            status: statusResult,
+            health: healthResult,
+            dsp: dspResult
+          }, null, 2);
+        } catch (error) {
+          elements.diagnosticStatus.classList.add('error');
+          elements.diagnosticStatus.textContent =
+            `Unexpected page error: ${error.message}`;
+        } finally {
+          elements.refreshButton.disabled = false;
+          elements.refreshButton.textContent = 'Refresh';
+        }
+      }
+
+      async function unlockControls() {
+        localStorage.setItem('apiKey', elements.apiKey.value);
+        const result = await api('/api/v1/auth');
+        const unlocked = result.success && result.http_ok !== false;
+        document.body.classList.toggle('locked', !unlocked);
+        elements.securityMessage.textContent = unlocked
+          ? 'Control panel unlocked.'
+          : resultMessage(result, '');
+        if (unlocked) await initializeProtectedControls();
+        return unlocked;
+      }
+
+      function applyMaintenanceValues(result) {
+        if (!result || !result.success) return;
+        elements.speakerProtection.checked = Boolean(result.speaker_protection);
+        elements.speakerThreshold.value = result.speaker_threshold_percent ?? 90;
+        elements.speakerThresholdValue.textContent = `${elements.speakerThreshold.value}%`;
+        elements.scheduledRestart.checked = Boolean(result.scheduled_restart);
+        elements.restartHours.value = String(result.restart_interval_hours ?? 24);
+        elements.themeSelect.value = String(result.theme ?? 0);
+        const due = result.restart_remaining_seconds
+          ? `${Math.ceil(result.restart_remaining_seconds / 3600)} hour(s) until due`
+          : result.scheduled_restart ? 'Restart is due and waiting for idle' : 'Disabled';
+        elements.restartMessage.textContent = `${due}; audio is ${result.audio_idle ? 'idle' : 'active'}.`;
+        elements.protectionStats.textContent =
+          `Limiter ${result.limiter_active ? 'active' : 'inactive'} · ` +
+          `${result.limiter_events ?? 0} limiter event(s) · ` +
+          `${result.clipping_events ?? 0} clipping event(s)`;
+        applyTheme(Number(result.theme ?? 0));
+      }
+
+      async function loadMaintenance() {
+        const result = await api('/api/v1/maintenance');
+        applyMaintenanceValues(result);
+        return result;
+      }
+
+      async function saveMaintenance(extra = {}, messageElement = elements.protectionMessage) {
+        const body = {
+          speaker_protection: elements.speakerProtection.checked,
+          speaker_threshold_percent: Number(elements.speakerThreshold.value),
+          scheduled_restart: elements.scheduledRestart.checked,
+          restart_interval_hours: Number(elements.restartHours.value),
+          theme: Number(elements.themeSelect.value),
+          ...extra
+        };
+        const result = await api('/api/v1/maintenance', {
+          method: 'POST', body: JSON.stringify(body)
+        });
+        messageElement.textContent = resultMessage(result, 'Settings saved.');
+        applyMaintenanceValues(result);
+      }
+
+      function applyTheme(theme) {
+        const name = theme === 1 ? 'dark' : theme === 2 ? 'light' : 'auto';
+        document.documentElement.dataset.theme = name;
+        localStorage.setItem('receiverTheme', name);
+      }
+
+      async function downloadBackup() {
+        elements.backupMessage.textContent = 'Preparing settings backup...';
+        const response = await fetch('/api/v1/backup', {
+          cache: 'no-store', headers: requestHeaders()
+        });
+        if (!response.ok) {
+          elements.backupMessage.textContent = `Backup failed: HTTP ${response.status}`;
+          return;
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'airplay-dlna-settings.json';
+        document.body.append(link); link.click(); link.remove();
+        URL.revokeObjectURL(url);
+        elements.backupMessage.textContent = 'Settings backup downloaded.';
+      }
+
+      async function restoreBackup() {
+        const file = elements.restoreFile.files[0];
+        if (!file) {
+          elements.backupMessage.textContent = 'Choose a JSON backup first.';
+          return;
+        }
+        let text;
+        try { text = await file.text(); JSON.parse(text); }
+        catch (error) {
+          elements.backupMessage.textContent = `Invalid JSON backup: ${error.message}`;
+          return;
+        }
+        if (!confirm('Restore all settings from this backup?')) return;
+        const result = await api('/api/v1/backup/restore', {
+          method: 'POST', body: text
+        });
+        elements.backupMessage.textContent = resultMessage(
+          result, 'Settings restored. Restart the receiver to apply everything.');
+      }
+
+      async function loadPersistentLog() {
+        elements.persistentLog.textContent = 'Loading...';
+        const response = await fetch('/api/v1/diagnostics/log', {
+          cache: 'no-store', headers: requestHeaders()
+        });
+        const text = await response.text();
+        elements.persistentLog.textContent = response.ok
+          ? (text || 'No retained warnings or errors.')
+          : `Unable to load log: ${text || response.status}`;
+      }
+
+      async function clearPersistentLog() {
+        if (!confirm('Clear the retained diagnostic history?')) return;
+        const result = await api('/api/v1/diagnostics/clear', {
+          method: 'POST', body: '{}'
+        });
+        elements.persistentLog.textContent = result.success
+          ? 'Diagnostic history cleared.' : resultMessage(result, '');
+      }
+
+      async function factoryReset() {
+        if (elements.factoryConfirmation.value !== 'ERASE ALL SETTINGS') {
+          elements.factoryMessage.textContent = 'Type ERASE ALL SETTINGS exactly.';
+          return;
+        }
+        if (!confirm('Final warning: erase every receiver setting and restart?')) return;
+        const result = await api('/api/v1/factory-reset', {
+          method: 'POST',
+          body: JSON.stringify({ confirmation: elements.factoryConfirmation.value })
+        });
+        elements.factoryMessage.textContent = result.success
+          ? 'Settings erased. Receiver is restarting.' : resultMessage(result, '');
+      }
+
+      let protectedInitialized = false;
+      async function initializeProtectedControls() {
+        if (protectedInitialized) return;
+        protectedInitialized = true;
+        await Promise.all([
+          loadPresets(), refreshSleepTimer(), refreshDiagnostics(),
+          loadMaintenance(), loadPersistentLog()
+        ]);
+      }
+
+      async function initializeAccess() {
+        const status = await api('/api/v1/status');
+        if (status.version) elements.pageVersion.textContent = `v${status.version}`;
+        if (!status.password_set) {
+          document.body.classList.remove('locked');
+          await initializeProtectedControls();
+        } else {
+          document.body.classList.add('locked');
+          if (elements.apiKey.value) await unlockControls();
+          if (document.body.classList.contains('locked')) {
+            elements.securityMessage.textContent =
+              'Enter the access password and press Unlock controls.';
+          }
+        }
+      }
+
+      async function sendControl(action) {
+        elements.playbackMessage.textContent = `Sending ${action}...`;
+        const result = await api('/api/v1/control', {
+          method: 'POST',
+          body: JSON.stringify({ action })
+        });
+        elements.playbackMessage.textContent =
+          resultMessage(result, 'Command sent.');
+        await refreshDiagnostics();
+      }
+
+      async function playRadio() {
+        const url = elements.radioUrl.value.trim();
+        if (!url) {
+          elements.radioMessage.textContent = 'Enter a stream URL first.';
+          return;
+        }
+        elements.radioMessage.textContent = 'Starting stream...';
+        const result = await api('/api/v1/radio', {
+          method: 'POST',
+          body: JSON.stringify({ url })
+        });
+        elements.radioMessage.textContent =
+          resultMessage(result, 'Internet radio started.');
+      }
+
+      async function loadPresets() {
+        const result = await api('/api/v1/radio/presets');
+        elements.presetList.replaceChildren();
+        if (!result.success || !Array.isArray(result.presets)) {
+          elements.radioMessage.textContent = resultMessage(result, '');
+          return;
+        }
+        result.presets.forEach(preset => {
+          if (!preset.url) return;
+          const row = document.createElement('div');
+          row.className = 'preset-item';
+          const label = document.createElement('span');
+          label.textContent = `${preset.slot + 1}. ${preset.name}`;
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = 'Play';
+          button.addEventListener('click', async () => {
+            elements.presetSlot.value = String(preset.slot);
+            elements.presetName.value = preset.name;
+            elements.radioUrl.value = preset.url;
+            await playRadio();
+          });
+          row.append(label, button);
+          elements.presetList.append(row);
+        });
+        if (!elements.presetList.childElementCount) {
+          const empty = document.createElement('p');
+          empty.className = 'muted';
+          empty.textContent = 'No favourite stations saved yet.';
+          elements.presetList.append(empty);
+        }
+      }
+
+      async function savePreset(clear = false) {
+        const body = {
+          slot: Number(elements.presetSlot.value),
+          name: clear ? '' : elements.presetName.value.trim(),
+          url: clear ? '' : elements.radioUrl.value.trim()
+        };
+        if (!clear && (!body.name || !body.url)) {
+          elements.radioMessage.textContent =
+            'Enter both a station name and stream URL.';
+          return;
+        }
+        const result = await api('/api/v1/radio/presets', {
+          method: 'POST', body: JSON.stringify(body)
+        });
+        elements.radioMessage.textContent = resultMessage(
+          result, clear ? 'Favourite cleared.' : 'Favourite saved.');
+        if (result.success) await loadPresets();
+      }
+
+      function formatSleep(seconds) {
+        if (!seconds) return 'Sleep timer is off.';
+        const minutes = Math.max(1, Math.ceil(seconds / 60));
+        return `Sleep timer active: approximately ${minutes} minute(s) remaining.`;
+      }
+
+      async function setSleepTimer(minutes) {
+        elements.sleepMessage.textContent = 'Updating sleep timer...';
+        const result = await api('/api/v1/sleep', {
+          method: 'POST', body: JSON.stringify({ minutes })
+        });
+        elements.sleepMessage.textContent = result.success
+          ? formatSleep(result.remaining_seconds)
+          : resultMessage(result, '');
+      }
+
+      async function refreshSleepTimer() {
+        const result = await api('/api/v1/sleep');
+        elements.sleepMessage.textContent = result.success
+          ? formatSleep(result.remaining_seconds)
+          : resultMessage(result, '');
+      }
+
+      async function applyEqPreset(name) {
+        const preset = eqPresets[name];
+        if (!preset) return;
+        elements.dspOn.checked = true;
+        elements.normalization.checked = Boolean(preset.normalization);
+        elements.balance.value = 0;
+        elements.channel.value = 0;
+        elements.cross.value = 0;
+        elements.crossHz.value = 80;
+        elements.eqGains.forEach((slider, index) => {
+          slider.value = preset.gains[index];
+        });
+        elements.limiter.checked = preset.gains.some(gain => gain > 0);
+        elements.eqPreset.value = name;
+        updateEqDisplays();
+        await saveDsp(`${preset.label} preset applied and saved.`);
+      }
+
+      function downloadDiagnostics() {
+        const text = elements.diagnosticStatus.textContent;
+        const blob = new Blob([text], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `airplay-diagnostics-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      }
+
+      async function setPassword() {
+        const newPassword = elements.newPassword.value;
+        elements.securityMessage.textContent = 'Updating password...';
+        const result = await api('/api/v1/security/password', {
+          method: 'POST',
+          body: JSON.stringify({ password: newPassword })
+        });
+        if (result.success && result.http_ok !== false) {
+          localStorage.setItem('apiKey', newPassword);
+          elements.apiKey.value = newPassword;
+          elements.newPassword.value = '';
+        }
+        elements.securityMessage.textContent =
+          resultMessage(result, 'API password updated.');
+        await refreshDiagnostics();
+      }
+
+      async function saveDsp(successText = 'Custom preset saved.') {
+        elements.dspMessage.textContent = 'Applying DSP settings...';
+        const current = await api('/api/v1/dsp');
+        if (!current.success) {
+          elements.dspMessage.textContent = resultMessage(current, '');
+          return;
+        }
+
+        const gains = elements.eqGains.map(slider => Number(slider.value));
+        if (gains.some(gain => gain > 0)) {
+          elements.limiter.checked = true;
+        }
+        const body = {
+          ...current,
+          enabled: elements.dspOn.checked,
+          limiter: elements.limiter.checked,
+          normalization: elements.normalization.checked,
+          balance: Number(elements.balance.value),
+          channel: Number(elements.channel.value),
+          crossover: Number(elements.cross.value),
+          crossover_hz: Number(elements.crossHz.value),
+          bands: eqFrequencies.map((frequency, index) => ({
+            frequency_hz: frequency,
+            gain_db: gains[index],
+            q: 1.0
+          }))
+        };
+        delete body.success;
+        delete body.http_status;
+        delete body.http_ok;
+
+        const result = await api('/api/v1/dsp', {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
+        elements.dspMessage.textContent =
+          resultMessage(result, successText);
+        applyDspValues(result);
+        await refreshDiagnostics();
+      }
+
+      document.getElementById('saveApiKeyButton')
+        .addEventListener('click', () => {
+          localStorage.setItem('apiKey', elements.apiKey.value);
+          elements.securityMessage.textContent =
+            'API password remembered in this browser.';
+          unlockControls();
+        });
+      document.getElementById('unlockButton')
+        .addEventListener('click', unlockControls);
+      document.getElementById('setPasswordButton')
+        .addEventListener('click', setPassword);
+      document.getElementById('radioButton')
+        .addEventListener('click', playRadio);
+      document.getElementById('savePresetButton')
+        .addEventListener('click', () => savePreset(false));
+      document.getElementById('clearPresetButton')
+        .addEventListener('click', () => savePreset(true));
+      document.getElementById('startSleepButton')
+        .addEventListener('click', () =>
+          setSleepTimer(Number(elements.sleepMinutes.value)));
+      document.getElementById('cancelSleepButton')
+        .addEventListener('click', () => setSleepTimer(0));
+      document.getElementById('downloadDiagnosticsButton')
+        .addEventListener('click', downloadDiagnostics);
+      document.getElementById('saveDspButton')
+        .addEventListener('click', () => saveDsp('Custom preset saved.'));
+      document.getElementById('applyPresetButton')
+        .addEventListener('click', () => applyEqPreset(elements.eqPreset.value));
+      document.getElementById('bassBoostButton')
+        .addEventListener('click', () => applyEqPreset('bass'));
+      document.getElementById('loudnessButton')
+        .addEventListener('click', () => applyEqPreset('loudness'));
+      document.getElementById('flatButton')
+        .addEventListener('click', () => applyEqPreset('flat'));
+      document.getElementById('saveProtectionButton')
+        .addEventListener('click', () => saveMaintenance({}, elements.protectionMessage));
+      document.getElementById('resetCountersButton')
+        .addEventListener('click', () => saveMaintenance(
+          { reset_counters: true }, elements.protectionMessage));
+      document.getElementById('saveRestartButton')
+        .addEventListener('click', () => saveMaintenance({}, elements.restartMessage));
+      document.getElementById('saveThemeButton')
+        .addEventListener('click', () => {
+          applyTheme(Number(elements.themeSelect.value));
+          saveMaintenance({}, elements.themeMessage);
+        });
+      document.getElementById('downloadBackupButton')
+        .addEventListener('click', downloadBackup);
+      document.getElementById('restoreBackupButton')
+        .addEventListener('click', restoreBackup);
+      document.getElementById('loadPersistentLogButton')
+        .addEventListener('click', loadPersistentLog);
+      document.getElementById('clearPersistentLogButton')
+        .addEventListener('click', clearPersistentLog);
+      document.getElementById('factoryResetButton')
+        .addEventListener('click', factoryReset);
+      elements.speakerThreshold.addEventListener('input', () => {
+        elements.speakerThresholdValue.textContent =
+          `${elements.speakerThreshold.value}%`;
+      });
+      elements.eqGains.forEach(slider => {
+        slider.addEventListener('input', () => {
+          elements.dspOn.checked = true;
+          if (Number(slider.value) > 0) elements.limiter.checked = true;
+          updateEqDisplays();
+        });
+      });
+      elements.refreshButton.addEventListener('click', refreshDiagnostics);
+      document.querySelectorAll('[data-control]').forEach(button => {
+        button.addEventListener('click',
+          () => sendControl(button.dataset.control));
+      });
+
+      updateEqDisplays();
+      initializeAccess();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html><html><head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>System Logs</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,system-ui,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;flex-direction:column}
+.toolbar{background:#161b22;padding:10px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #30363d}
+.toolbar h1{font-size:16px;font-weight:600;flex:1}
+.toolbar a{color:#58a6ff;text-decoration:none;font-size:13px}
+.dot{width:10px;height:10px;border-radius:50%;background:#f85149}
+.dot.ok{background:#3fb950}
+.btn-sm{padding:6px 12px;border:1px solid #30363d;border-radius:6px;background:#21262d;color:#c9d1d9;font-size:12px;cursor:pointer}
+.btn-sm:hover{background:#30363d}
+#log{flex:1;overflow-y:auto;padding:12px 16px;font-family:'SF Mono',Consolas,monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+.a30{color:#484f58}.a31{color:#f85149}.a32{color:#3fb950}.a33{color:#d29922}.a34{color:#58a6ff}.a35{color:#bc8cff}.a36{color:#39c5cf}.a37{color:#c9d1d9}
+.a90{color:#6e7681}.a91{color:#ff7b72}.a92{color:#56d364}.a93{color:#e3b341}.a94{color:#79c0ff}.a95{color:#d2a8ff}.a96{color:#56d4dd}.a97{color:#f0f6fc}
+html[data-theme=light] body{background:#f6f8fa;color:#24292f}html[data-theme=light] .toolbar{background:#fff;border-color:#d0d7de}html[data-theme=light] .btn-sm{background:#f6f8fa;color:#24292f;border-color:#d0d7de}
+@media(prefers-color-scheme:light){html[data-theme=auto] body{background:#f6f8fa;color:#24292f}html[data-theme=auto] .toolbar{background:#fff;border-color:#d0d7de}html[data-theme=auto] .btn-sm{background:#f6f8fa;color:#24292f;border-color:#d0d7de}}
+/* Liquid Glass interface */
+:root{color-scheme:dark;--text:#eaf2ff;--muted:rgba(235,240,255,.58);--glass:rgba(20,28,48,.64);--field:rgba(3,8,20,.48);--edge:rgba(255,255,255,.17);--blue:#0a84ff;--cyan:#5ac8fa}
+body{color:var(--text);background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.22),transparent 31%),radial-gradient(circle at 92% 18%,rgba(94,92,230,.22),transparent 35%),linear-gradient(145deg,#060b16,#11182e 58%,#071120);background-attachment:fixed}
+.toolbar{position:sticky;top:0;z-index:2;padding:13px 18px;background:linear-gradient(145deg,rgba(255,255,255,.1),rgba(255,255,255,.025)),var(--glass);-webkit-backdrop-filter:blur(28px) saturate(175%);backdrop-filter:blur(28px) saturate(175%);border-color:var(--edge);box-shadow:0 14px 38px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.11)}.toolbar h1{font-size:17px;letter-spacing:-.25px}.toolbar a{color:var(--cyan)}.dot{box-shadow:0 0 12px currentColor}.btn-sm{padding:8px 14px;border-radius:999px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.14);color:var(--text);font-weight:600;transition:transform .18s,background .18s}.btn-sm:hover{background:rgba(255,255,255,.17);transform:translateY(-1px)}.btn-sm:active{transform:scale(.97)}
+#log{margin:14px;border:1px solid rgba(255,255,255,.09);border-radius:22px;background:var(--field);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.2);padding:18px;line-height:1.65}
+html[data-theme=light]{color-scheme:light;--text:#172033;--glass:rgba(255,255,255,.58);--field:rgba(255,255,255,.52);--edge:rgba(255,255,255,.82)}html[data-theme=light] body{background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.34),transparent 31%),radial-gradient(circle at 92% 18%,rgba(175,82,222,.18),transparent 35%),linear-gradient(145deg,#eef7ff,#e9ecf7 60%,#f9fbff);color:var(--text)}html[data-theme=light] .toolbar{background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,255,255,.3)),var(--glass);border-color:var(--edge)}html[data-theme=light] .btn-sm,html[data-theme=light] #log{background:rgba(255,255,255,.52);color:var(--text);border-color:rgba(255,255,255,.78)}
+@media(prefers-color-scheme:light){html[data-theme=auto]{color-scheme:light;--text:#172033;--glass:rgba(255,255,255,.58);--field:rgba(255,255,255,.52);--edge:rgba(255,255,255,.82)}html[data-theme=auto] body{background:radial-gradient(circle at 8% 4%,rgba(90,200,250,.34),transparent 31%),radial-gradient(circle at 92% 18%,rgba(175,82,222,.18),transparent 35%),linear-gradient(145deg,#eef7ff,#e9ecf7 60%,#f9fbff);color:var(--text)}html[data-theme=auto] .toolbar{background:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,255,255,.3)),var(--glass);border-color:var(--edge)}html[data-theme=auto] .btn-sm,html[data-theme=auto] #log{background:rgba(255,255,255,.52);color:var(--text);border-color:rgba(255,255,255,.78)}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}@media(max-width:560px){.toolbar{flex-wrap:wrap}.toolbar h1{order:-1;width:calc(100% - 70px)}#log{margin:8px;border-radius:18px;padding:13px}}
+</style></head><body>
+<div class='toolbar'>
+<a href='/'>&larr; Back</a>
+<h1>System Logs</h1>
+<span id='dot' class='dot'></span>
+<button class='btn-sm' onclick='clear_log()'>Clear</button>
+<button class='btn-sm' id='scroll-btn' onclick='toggle_scroll()'>Auto-scroll: ON</button>
+</div>
+<div id='log'><div id='anchor'></div></div>
+<script>
+document.documentElement.dataset.theme=localStorage.getItem('receiverTheme')||'auto';
+var log=document.getElementById('log'),dot=document.getElementById('dot'),anchor=document.getElementById('anchor'),autoScroll=true,maxLines=2000;
+function toggle_scroll(){autoScroll=!autoScroll;document.getElementById('scroll-btn').textContent='Auto-scroll: '+(autoScroll?'ON':'OFF');}
+function clear_log(){log.innerHTML='';anchor=document.createElement('div');anchor.id='anchor';log.appendChild(anchor);}
+var ansiRe=/\x1b\[([0-9;]*)m/g;
+var ansiCls={'30':1,'31':1,'32':1,'33':1,'34':1,'35':1,'36':1,'37':1,'90':1,'91':1,'92':1,'93':1,'94':1,'95':1,'96':1,'97':1};
+var letterCls={'E':'a31','W':'a33','I':'a32','D':'a30','V':'a30'};
+function colorize(text){
+  var frag=document.createDocumentFragment();
+  text.split('\n').forEach(function(line){
+    if(!line)return;
+    var wrap=document.createElement('span');
+    var hasAnsi=ansiRe.test(line);
+    ansiRe.lastIndex=0;
+    if(hasAnsi){
+      var last=0,cls=null,m;
+      while((m=ansiRe.exec(line))!==null){
+        if(m.index>last){
+          var s=document.createElement('span');
+          if(cls)s.className=cls;
+          s.textContent=line.substring(last,m.index);
+          wrap.appendChild(s);
+        }
+        var p=m[1].split(';');cls=null;
+        for(var i=0;i<p.length;i++){if(ansiCls[p[i]])cls='a'+p[i];}
+        last=ansiRe.lastIndex;
+      }
+      if(last<line.length){
+        var s=document.createElement('span');
+        if(cls)s.className=cls;
+        s.textContent=line.substring(last);
+        wrap.appendChild(s);
+      }
+    }else{
+      var ch=line.charAt(0);
+      if(letterCls[ch])wrap.className=letterCls[ch];
+      wrap.textContent=line;
+    }
+    wrap.appendChild(document.createTextNode('\n'));
+    frag.appendChild(wrap);
+  });
+  log.insertBefore(frag,anchor);
+  while(log.childNodes.length>maxLines+1)log.removeChild(log.firstChild);
+  if(autoScroll)anchor.scrollIntoView();
+}
+function connect(){
+  var ws=new WebSocket('ws://'+location.host+'/ws/logs');
+  ws.onopen=function(){dot.classList.add('ok');};
+  ws.onclose=function(){dot.classList.remove('ok');setTimeout(connect,2000);};
+  ws.onmessage=function(e){colorize(e.data);};
+}
+connect();
+</script></body></html>
