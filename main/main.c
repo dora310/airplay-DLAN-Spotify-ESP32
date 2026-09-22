@@ -73,37 +73,64 @@ static void on_airplay_dlna_event(rtsp_event_t event,
   }
 }
 
-static void start_airplay_services(void) {
+static esp_err_t start_airplay_services(void) {
   if (recovery_is_safe_mode()) {
     ESP_LOGW(TAG, "Safe mode: AirPlay/DLNA audio services remain disabled");
-    return;
+    return ESP_ERR_INVALID_STATE;
   }
   if (s_airplay_started) {
-    return;
+    return ESP_OK;
   }
 
   ESP_LOGI(TAG, "Starting AirPlay services...");
 
   // One-time infrastructure init (PTP, HAP, audio receiver/output)
   if (!s_airplay_infrastructure_ready) {
-    esp_err_t err = ptp_clock_init();
+    esp_err_t err;
+#ifndef CONFIG_AIRPLAY_FORCE_V1
+    err = ptp_clock_init();
     if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
       ESP_LOGE(TAG, "Failed to init PTP clock: %s", esp_err_to_name(err));
       s_airplay_started = false;
-      return;
+      return err;
     }
+#endif
 
-    ESP_ERROR_CHECK(hap_init());
-    ESP_ERROR_CHECK(audio_receiver_init());
-    ESP_ERROR_CHECK(audio_output_init());
+    err = hap_init();
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+      ESP_LOGE(TAG, "HAP initialization failed: %s", esp_err_to_name(err));
+      return err;
+    }
+    err = audio_receiver_init();
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+      ESP_LOGE(TAG, "Audio receiver initialization failed: %s",
+               esp_err_to_name(err));
+      return err;
+    }
+    err = audio_output_init();
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+      ESP_LOGE(TAG, "Audio output initialization failed: %s",
+               esp_err_to_name(err));
+      return err;
+    }
     audio_test_set_output_ready(true);
-    mdns_airplay_init();
+    err = mdns_airplay_init();
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+      ESP_LOGE(TAG, "AirPlay advertisement failed: %s", esp_err_to_name(err));
+      return err;
+    }
     s_airplay_infrastructure_ready = true;
   }
 
   audio_output_start();
 
-  ESP_ERROR_CHECK(rtsp_server_start());
+  esp_err_t rtsp_err = rtsp_server_start();
+  if (rtsp_err != ESP_OK && rtsp_err != ESP_ERR_INVALID_STATE) {
+    ESP_LOGE(TAG, "RTSP server failed to start: %s",
+             esp_err_to_name(rtsp_err));
+    audio_output_stop();
+    return rtsp_err;
+  }
 
   s_airplay_started = true;
   ESP_LOGI(TAG, "AirPlay ready");
@@ -123,6 +150,48 @@ static void start_airplay_services(void) {
     }
   }
 #endif
+  return ESP_OK;
+}
+
+/* Rebuild network-facing services after DHCP/interface recovery. A link can
+ * disconnect and reconnect entirely between two network-monitor polls, so the
+ * Wi-Fi disconnect generation is also watched below. */
+static esp_err_t recover_airplay_services(void) {
+  if (recovery_is_safe_mode()) {
+    return ESP_ERR_INVALID_STATE;
+  }
+  if (!s_airplay_started) {
+    return start_airplay_services();
+  }
+
+  ESP_LOGW(TAG, "Network changed; refreshing AirPlay services");
+  rtsp_server_stop();
+  s_airplay_started = false;
+
+#ifndef CONFIG_AIRPLAY_FORCE_V1
+  ptp_clock_stop();
+  esp_err_t ptp_err = ptp_clock_init();
+  if (ptp_err != ESP_OK && ptp_err != ESP_ERR_INVALID_STATE) {
+    ESP_LOGW(TAG, "PTP restart failed: %s", esp_err_to_name(ptp_err));
+  }
+#endif
+
+  esp_err_t mdns_err = mdns_airplay_refresh();
+  if (mdns_err != ESP_OK) {
+    ESP_LOGE(TAG, "AirPlay mDNS refresh failed: %s",
+             esp_err_to_name(mdns_err));
+    return mdns_err;
+  }
+
+  audio_output_start();
+  esp_err_t rtsp_err = rtsp_server_start();
+  if (rtsp_err != ESP_OK && rtsp_err != ESP_ERR_INVALID_STATE) {
+    ESP_LOGE(TAG, "RTSP recovery failed: %s", esp_err_to_name(rtsp_err));
+    return rtsp_err;
+  }
+  s_airplay_started = true;
+  ESP_LOGI(TAG, "AirPlay recovered after network change");
+  return ESP_OK;
 }
 #ifdef CONFIG_BT_A2DP_ENABLE
 static void stop_airplay_services(void) {
@@ -147,6 +216,8 @@ static void network_monitor_task(void *pvParameters) {
   bool dns_running = !had_network;
   bool wifi_started = wifi_is_connected() || !ethernet_is_connected();
   bool had_eth = ethernet_is_connected();
+  uint32_t last_wifi_disconnect_count = wifi_get_disconnect_count();
+  bool airplay_recovery_pending = false;
 
   // Start captive portal DNS if no network yet
   if (dns_running) {
@@ -159,6 +230,11 @@ static void network_monitor_task(void *pvParameters) {
     bool eth_up = ethernet_is_connected();
     bool wifi_up = wifi_is_connected();
     bool has_network = eth_up || wifi_up;
+    uint32_t wifi_disconnect_count = wifi_get_disconnect_count();
+    if (wifi_disconnect_count != last_wifi_disconnect_count) {
+      last_wifi_disconnect_count = wifi_disconnect_count;
+      airplay_recovery_pending = true;
+    }
 
     // Ethernet just came up — stop WiFi entirely
     if (eth_up && !had_eth && wifi_started) {
@@ -178,14 +254,20 @@ static void network_monitor_task(void *pvParameters) {
     had_eth = eth_up;
     has_network = eth_up || wifi_is_connected();
 
-    if (has_network == had_network) {
+    if (has_network == had_network &&
+        !(has_network && airplay_recovery_pending)) {
       continue;
     }
 
     if (has_network) {
       ESP_LOGI(TAG, "Network up (eth=%s, wifi=%s)", eth_up ? "yes" : "no",
                wifi_up ? "yes" : "no");
-      start_airplay_services();
+      if (airplay_recovery_pending) {
+        recover_airplay_services();
+        airplay_recovery_pending = false;
+      } else {
+        start_airplay_services();
+      }
       if (dns_running) {
         dns_server_stop();
         dns_running = false;

@@ -7,7 +7,11 @@
 #include <string.h>
 
 #define RECOVERY_NAMESPACE "recovery"
-#define RECOVERY_KEY_CRASHES "crashes"
+/* v2 intentionally starts with a clean counter. Older firmware could abort
+ * while starting optional AirPlay services and permanently strand an updated
+ * receiver in Safe Mode. A real crash in this build is still counted and
+ * enters Safe Mode after RECOVERY_CRASH_LIMIT consecutive failures. */
+#define RECOVERY_KEY_CRASHES "crashes_v2"
 #define RECOVERY_KEY_FORCED "forced"
 #define RECOVERY_CRASH_LIMIT 3
 
