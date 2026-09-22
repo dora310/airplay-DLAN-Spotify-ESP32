@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.16)
 idf_component_register(
     SRCS "component_anchor.c"
     INCLUDE_DIRS "include" "cspot/include" "cspot/bell/external/nanopb"
+                 "cspot/bell/main/utilities/include"
+                 "cspot/bell/main/platform"
+                 "cspot/bell/main/io/include"
                  "cspot/bell/external/nlohmann_json/include"
                  "cspot/bell/external/tremor"
     REQUIRES mbedtls espressif__mdns pthread driver lwip json esp_timer
