@@ -126,6 +126,11 @@ set( DEPS
 
 if(CONFIG_SPOTIFY_CONNECT_ENABLE)
     list(APPEND DEPS cspot_embedded)
+    # ESP-IDF validates every INCLUDE_DIRS entry during initial configure,
+    # before cspot's nanopb custom command creates its generated header tree.
+    # A clean GitHub Actions runner therefore needs the parent directory to
+    # exist at configure time (incremental/PlatformIO builds already have it).
+    file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/esp-idf/cspot_embedded/cspot")
 endif()
 
 # TODO: why these fall over in CI and fine locally...

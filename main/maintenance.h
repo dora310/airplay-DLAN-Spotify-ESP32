@@ -8,8 +8,7 @@
 /** Start OTA validation and idle-only scheduled-restart supervision. */
 esp_err_t maintenance_init(void);
 
-/** Called after the configuration server and core services start successfully.
- */
+/** Called after the configuration server and core services start successfully. */
 void maintenance_mark_services_ready(void);
 
 /** Store new maintenance preferences and apply them immediately. */

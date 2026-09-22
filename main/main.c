@@ -112,8 +112,8 @@ static void start_airplay_services(void) {
   if (!s_spotify_started && web_server_get_handle()) {
     char spotify_name[65];
     settings_get_device_name(spotify_name, sizeof(spotify_name));
-    esp_err_t spotify_err =
-        spotify_connect_start(web_server_get_handle(), 80, spotify_name);
+    esp_err_t spotify_err = spotify_connect_start(
+        web_server_get_handle(), 80, spotify_name);
     if (spotify_err == ESP_OK || spotify_err == ESP_ERR_INVALID_STATE) {
       s_spotify_started = true;
       ESP_LOGI(TAG, "Spotify Connect ready");
@@ -312,12 +312,12 @@ void app_main(void) {
     // Wait for initial WiFi connection if credentials exist
     if (settings_has_wifi_credentials()) {
       if (!wifi_wait_connected(30000)) {
-        ESP_LOGI(TAG, "Connect to 'AirPlay and DLNA Setup' -> "
-                      "http://" WIFI_PROVISIONING_IP_STR);
+        ESP_LOGI(TAG, "Connect to 'AirPlay and DLNA Setup' -> http://"
+                      WIFI_PROVISIONING_IP_STR);
       }
     } else {
-      ESP_LOGI(TAG, "Connect to 'AirPlay and DLNA Setup' -> "
-                    "http://" WIFI_PROVISIONING_IP_STR);
+      ESP_LOGI(TAG, "Connect to 'AirPlay and DLNA Setup' -> http://"
+                    WIFI_PROVISIONING_IP_STR);
     }
   } else {
     ESP_LOGI(TAG, "Ethernet connected — skipping WiFi");
@@ -349,7 +349,8 @@ void app_main(void) {
   maintenance_mark_services_ready();
   recovery_mark_services_ready();
   if (!recovery_is_safe_mode()) {
-    esp_err_t dlna_err = dlna_renderer_register(web_server_get_handle(), 80);
+    esp_err_t dlna_err =
+        dlna_renderer_register(web_server_get_handle(), 80);
     if (dlna_err != ESP_OK) {
       ESP_LOGE(TAG, "Failed to register DLNA: %s", esp_err_to_name(dlna_err));
     }

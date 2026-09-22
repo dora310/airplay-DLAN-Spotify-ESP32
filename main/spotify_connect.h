@@ -9,8 +9,7 @@
 extern "C" {
 #endif
 
-/** Start the experimental Spotify Connect service on the existing web server.
- */
+/** Start the experimental Spotify Connect service on the existing web server. */
 esp_err_t spotify_connect_start(httpd_handle_t server, uint16_t port,
                                 const char *device_name);
 
