@@ -96,6 +96,13 @@ html[data-theme=light] .btn-secondary{background:rgba(255,255,255,.62);border-co
 <span id='led-pct'>50%</span></div></div>
 <button class='btn btn-secondary' onclick='saveBrightness()'>Save Brightness</button>
 <div id='brightness-msg'></div></div>
+<div class='card' id='spotify-card'><h2>Spotify Connect</h2>
+<p style='color:#888;font-size:13px;margin-bottom:14px'>Use credentials from your own Spotify Developer app. They are stored only on this receiver. The saved Client Secret is never displayed or returned by the control panel.</p>
+<div class='form-group'><label>Spotify Client ID</label><input type='text' id='spotify-client-id' maxlength='128' autocomplete='off' placeholder='Enter your Client ID'></div>
+<div class='form-group'><label>Spotify Client Secret</label><input type='password' id='spotify-client-secret' maxlength='128' autocomplete='new-password' placeholder='Enter your Client Secret'></div>
+<div id='spotify-status' class='msg info'>Checking Spotify configuration...</div>
+<div class='actions'><button class='btn btn-primary' onclick='saveSpotify()'>Save Spotify Settings</button><button class='btn btn-danger' onclick='clearSpotify()'>Remove Credentials</button></div>
+<div id='spotify-msg'></div></div>
 <div class='card'><h2>Firmware Update</h2>
 <div class='file-row'><input type='file' id='fw-file' accept='.bin' style='display:none'>
 <button class='btn btn-secondary' onclick='document.getElementById("fw-file").click()'>Choose File</button>
@@ -168,6 +175,33 @@ async function saveName(){
   try{var r=await fetch('/api/device/name',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey()},body:JSON.stringify({name:n})});
     var d=await r.json();if(d.success){msg('name-msg','Saved! Restart to apply.','ok');loadInfo();}else{msg('name-msg',d.error,'err');}}
   catch(e){msg('name-msg','Error','err');}}
+async function loadSpotify(){
+  var card=document.getElementById('spotify-card');var status=document.getElementById('spotify-status');
+  try{var r=await fetch('/api/v1/spotify',{cache:'no-store',headers:{'X-API-Key':apiKey()}});var d=await r.json();
+    if(!r.ok||!d.success)throw new Error(d.error||'Request failed');
+    if(!d.supported){card.style.display='none';return;}
+    card.style.display='';document.getElementById('spotify-client-id').value=d.client_id||'';
+    document.getElementById('spotify-client-secret').value='';status.dataset.secretSet=d.secret_set?'1':'0';
+    status.className='msg '+(d.configured?'ok':'info');
+    status.textContent=d.configured?'Configured on this device. Leave the Secret blank to keep the saved value. Restart after changing it.':'Not configured. Add your own Client ID and Secret, then restart the receiver.';
+  }catch(e){status.className='msg err';status.textContent='Could not read Spotify settings.';}}
+async function saveSpotify(){
+  var id=document.getElementById('spotify-client-id').value.trim();
+  var secret=document.getElementById('spotify-client-secret').value.trim();
+  var hasSecret=document.getElementById('spotify-status').dataset.secretSet==='1';
+  if(!id){msg('spotify-msg','Enter the Spotify Client ID','err');return;}
+  if(!secret&&!hasSecret){msg('spotify-msg','Enter the matching Spotify Client Secret','err');return;}
+  try{var r=await fetch('/api/v1/spotify',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey()},body:JSON.stringify({client_id:id,client_secret:secret})});var d=await r.json();
+    if(!r.ok||!d.success){msg('spotify-msg',d.error||'Could not save Spotify settings','err');return;}
+    await loadSpotify();msg('spotify-msg','Spotify settings saved on this device. Restart required.','ok');
+    if(confirm('Spotify settings saved. Restart the receiver now?'))restart();
+  }catch(e){msg('spotify-msg','Could not save Spotify settings','err');}}
+async function clearSpotify(){
+  if(!confirm('Remove the Spotify Client ID and Secret from this receiver?'))return;
+  try{var r=await fetch('/api/v1/spotify',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':apiKey()},body:JSON.stringify({clear:true})});var d=await r.json();
+    if(!r.ok||!d.success){msg('spotify-msg',d.error||'Could not remove Spotify settings','err');return;}
+    await loadSpotify();msg('spotify-msg','Spotify credentials removed. Restart required.','ok');
+  }catch(e){msg('spotify-msg','Could not remove Spotify settings','err');}}
 async function startOTA(){
   var f=document.getElementById('fw-file').files[0];if(!f){msg('ota-msg','Select a file','err');return;}
   document.getElementById('ota-btn').disabled=true;msg('ota-msg','Uploading...','info');
@@ -181,7 +215,7 @@ async function restart(){
 async function unlockPanel(){
   var key=document.getElementById('main-api-key').value;localStorage.setItem('apiKey',key);
   try{var r=await fetch('/api/v1/auth',{headers:{'X-API-Key':key}});var d=await r.json();
-    if(r.ok&&d.success){document.body.classList.remove('locked');loadInfo();loadBrightness();}
+    if(r.ok&&d.success){document.body.classList.remove('locked');loadInfo();loadBrightness();loadSpotify();}
     else{msg('access-msg','Incorrect password','err');}}
   catch(e){msg('access-msg','Unable to contact receiver','err');}}
 async function checkAccess(){
@@ -215,5 +249,5 @@ window.onload=async function(){
   document.getElementById('fw-file').onchange=function(e){var f=e.target.files[0];
     document.getElementById('fw-name').textContent=f?f.name:'No file selected';
     document.getElementById('ota-btn').disabled=!f;};
-  await loadSavedTheme();if(await checkAccess()){loadInfo();loadBrightness();setInterval(loadInfo,30000);}};
+  await loadSavedTheme();if(await checkAccess()){loadInfo();loadBrightness();loadSpotify();setInterval(loadInfo,30000);}};
 </script></body></html>
