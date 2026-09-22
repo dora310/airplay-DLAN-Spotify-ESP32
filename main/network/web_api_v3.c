@@ -833,6 +833,91 @@ static esp_err_t mqtt_post(httpd_req_t *req) {
   return err;
 }
 
+static void spotify_to_json(cJSON *out, const settings_spotify_t *config,
+                            bool configured) {
+#ifdef CONFIG_SPOTIFY_CONNECT_ENABLE
+  cJSON_AddBoolToObject(out, "supported", true);
+#else
+  cJSON_AddBoolToObject(out, "supported", false);
+#endif
+  cJSON_AddBoolToObject(out, "configured", configured);
+  cJSON_AddStringToObject(out, "client_id",
+                          configured ? config->client_id : "");
+  /* Never return the Client Secret through the HTTP API. */
+  cJSON_AddBoolToObject(out, "secret_set", configured);
+}
+
+static esp_err_t spotify_get(httpd_req_t *req) {
+  if (require_auth(req) != ESP_OK) return ESP_OK;
+  settings_spotify_t config = {0};
+  bool configured = settings_get_spotify(&config) == ESP_OK;
+  cJSON *out = cJSON_CreateObject();
+  cJSON_AddBoolToObject(out, "success", true);
+  spotify_to_json(out, &config, configured);
+  memset(&config, 0, sizeof(config));
+  esp_err_t err = send_json(req, out);
+  cJSON_Delete(out);
+  return err;
+}
+
+static esp_err_t spotify_post(httpd_req_t *req) {
+  if (require_auth(req) != ESP_OK) return ESP_OK;
+  cJSON *in = read_json(req);
+  cJSON *clear = in ? cJSON_GetObjectItem(in, "clear") : NULL;
+  esp_err_t result = ESP_ERR_INVALID_ARG;
+  settings_spotify_t config = {0};
+
+  if (cJSON_IsTrue(clear)) {
+    result = settings_clear_spotify();
+  } else if (in) {
+    settings_spotify_t existing = {0};
+    bool had_existing = settings_get_spotify(&existing) == ESP_OK;
+    if (had_existing) config = existing;
+
+    cJSON *client_id = cJSON_GetObjectItem(in, "client_id");
+    cJSON *client_secret = cJSON_GetObjectItem(in, "client_secret");
+    bool id_fits = !cJSON_IsString(client_id) ||
+                   strlen(client_id->valuestring) < sizeof(config.client_id);
+    bool secret_fits = !cJSON_IsString(client_secret) ||
+                       strlen(client_secret->valuestring) <
+                           sizeof(config.client_secret);
+    if (id_fits && cJSON_IsString(client_id) && client_id->valuestring[0]) {
+      strlcpy(config.client_id, client_id->valuestring,
+              sizeof(config.client_id));
+    }
+    if (secret_fits && cJSON_IsString(client_secret) &&
+        client_secret->valuestring[0]) {
+      strlcpy(config.client_secret, client_secret->valuestring,
+              sizeof(config.client_secret));
+    }
+
+    bool id_changed = had_existing && cJSON_IsString(client_id) &&
+                      strcmp(existing.client_id, config.client_id) != 0;
+    bool new_secret = cJSON_IsString(client_secret) &&
+                      client_secret->valuestring[0] != '\0';
+    if (id_fits && secret_fits && (!id_changed || new_secret)) {
+      result = settings_set_spotify(&config);
+    }
+    memset(&existing, 0, sizeof(existing));
+  }
+
+  bool configured = settings_get_spotify(&config) == ESP_OK;
+  cJSON *out = cJSON_CreateObject();
+  cJSON_AddBoolToObject(out, "success", result == ESP_OK);
+  spotify_to_json(out, &config, configured);
+  cJSON_AddBoolToObject(out, "restart_required", result == ESP_OK);
+  if (result != ESP_OK) {
+    cJSON_AddStringToObject(
+        out, "error",
+        "Enter a valid Client ID and Secret; changing the ID requires the matching Secret");
+  }
+  memset(&config, 0, sizeof(config));
+  esp_err_t err = send_json(req, out);
+  cJSON_Delete(out);
+  cJSON_Delete(in);
+  return err;
+}
+
 static esp_err_t audio_test_post(httpd_req_t *req) {
   if (require_auth(req) != ESP_OK) return ESP_OK;
   cJSON *in = read_json(req);
@@ -937,6 +1022,8 @@ esp_err_t web_api_v3_register(httpd_handle_t s) {
     {.uri="/api/v1/wifi/test", .method=HTTP_POST, .handler=wifi_test_post},
     {.uri="/api/v1/mqtt", .method=HTTP_GET, .handler=mqtt_get},
     {.uri="/api/v1/mqtt", .method=HTTP_POST, .handler=mqtt_post},
+    {.uri="/api/v1/spotify", .method=HTTP_GET, .handler=spotify_get},
+    {.uri="/api/v1/spotify", .method=HTTP_POST, .handler=spotify_post},
     {.uri="/api/v1/audio/test", .method=HTTP_POST, .handler=audio_test_post},
     {.uri="/api/v1/github-ota", .method=HTTP_GET, .handler=github_ota_get},
     {.uri="/api/v1/github-ota", .method=HTTP_POST, .handler=github_ota_post},
