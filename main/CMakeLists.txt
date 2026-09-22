@@ -91,6 +91,8 @@ set( INC_DIRS
 if(CONFIG_SPOTIFY_CONNECT_ENABLE)
     list(APPEND INC_DIRS
         "${PROJECT_DIR}/components/cspot_embedded/cspot/include"
+        "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/main/utilities/include"
+        "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/main/platform"
         "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/external/nanopb"
         "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/external/nlohmann_json/include"
         "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/external/tremor"
