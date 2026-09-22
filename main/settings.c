@@ -25,6 +25,8 @@ static const char *TAG = "settings";
 #define NVS_KEY_MQTT           "mqtt_v1"
 #define NVS_KEY_PENDING_SSID   "wifi_test_s"
 #define NVS_KEY_PENDING_PASS   "wifi_test_p"
+#define NVS_KEY_SPOTIFY_ID     "spotify_id"
+#define NVS_KEY_SPOTIFY_SECRET "spotify_secret"
 
 #define MAX_WIFI_SSID_LEN     32
 #define MAX_WIFI_PASSWORD_LEN 64
@@ -757,6 +759,95 @@ esp_err_t settings_set_mqtt(const settings_mqtt_t *config) {
   err = nvs_set_blob(nvs, NVS_KEY_MQTT, &value, sizeof(value));
   if (err == ESP_OK) err = nvs_commit(nvs);
   nvs_close(nvs);
+  return err;
+}
+
+static bool spotify_value_valid(const char *value, size_t capacity) {
+  if (!value) return false;
+  size_t length = strnlen(value, capacity);
+  if (length == 0 || length >= capacity) return false;
+  for (size_t i = 0; i < length; i++) {
+    unsigned char c = (unsigned char)value[i];
+    if (c <= 0x20 || c >= 0x7f) return false;
+  }
+  return true;
+}
+
+esp_err_t settings_get_spotify(settings_spotify_t *config) {
+  if (!config) return ESP_ERR_INVALID_ARG;
+  memset(config, 0, sizeof(*config));
+
+  nvs_handle_t nvs;
+  esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READONLY, &nvs);
+  if (err != ESP_OK) return ESP_ERR_NOT_FOUND;
+
+  size_t size = sizeof(config->client_id);
+  err = nvs_get_str(nvs, NVS_KEY_SPOTIFY_ID, config->client_id, &size);
+  if (err == ESP_OK) {
+    size = sizeof(config->client_secret);
+    err = nvs_get_str(nvs, NVS_KEY_SPOTIFY_SECRET,
+                      config->client_secret, &size);
+  }
+  nvs_close(nvs);
+
+  if (err != ESP_OK ||
+      !spotify_value_valid(config->client_id, sizeof(config->client_id)) ||
+      !spotify_value_valid(config->client_secret,
+                           sizeof(config->client_secret))) {
+    memset(config, 0, sizeof(*config));
+    return err == ESP_OK ? ESP_ERR_INVALID_STATE : err;
+  }
+  return ESP_OK;
+}
+
+esp_err_t settings_set_spotify(const settings_spotify_t *config) {
+  if (!config ||
+      !spotify_value_valid(config->client_id, sizeof(config->client_id)) ||
+      !spotify_value_valid(config->client_secret,
+                           sizeof(config->client_secret))) {
+    return ESP_ERR_INVALID_ARG;
+  }
+
+  nvs_handle_t nvs;
+  esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
+  if (err != ESP_OK) return err;
+  err = nvs_set_str(nvs, NVS_KEY_SPOTIFY_ID, config->client_id);
+  if (err == ESP_OK) {
+    err = nvs_set_str(nvs, NVS_KEY_SPOTIFY_SECRET,
+                      config->client_secret);
+  }
+  if (err == ESP_OK) err = nvs_commit(nvs);
+  nvs_close(nvs);
+
+  if (err == ESP_OK) {
+    ESP_LOGI(TAG, "Saved per-device Spotify credentials");
+  } else {
+    ESP_LOGE(TAG, "Failed to save Spotify credentials: %s",
+             esp_err_to_name(err));
+  }
+  return err;
+}
+
+bool settings_has_spotify_credentials(void) {
+  settings_spotify_t config;
+  return settings_get_spotify(&config) == ESP_OK;
+}
+
+esp_err_t settings_clear_spotify(void) {
+  nvs_handle_t nvs;
+  esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs);
+  if (err != ESP_OK) return err;
+  esp_err_t id_err = nvs_erase_key(nvs, NVS_KEY_SPOTIFY_ID);
+  esp_err_t secret_err = nvs_erase_key(nvs, NVS_KEY_SPOTIFY_SECRET);
+  if (id_err != ESP_OK && id_err != ESP_ERR_NVS_NOT_FOUND) {
+    err = id_err;
+  } else if (secret_err != ESP_OK && secret_err != ESP_ERR_NVS_NOT_FOUND) {
+    err = secret_err;
+  } else {
+    err = nvs_commit(nvs);
+  }
+  nvs_close(nvs);
+  if (err == ESP_OK) ESP_LOGI(TAG, "Cleared per-device Spotify credentials");
   return err;
 }
 

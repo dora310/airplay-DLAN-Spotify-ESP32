@@ -33,6 +33,7 @@
 extern "C" {
 #include "audio_output.h"
 #include "display.h"
+#include "settings.h"
 #include "source_manager.h"
 }
 
@@ -76,9 +77,12 @@ static void url_decode_in_place(char *text) {
 
 class SpotifyPlayer : public bell::Task {
  public:
-  SpotifyPlayer(const char *name, httpd_handle_t server, uint16_t port)
+  SpotifyPlayer(const char *name, httpd_handle_t server, uint16_t port,
+                const char *client_id, const char *client_secret)
       : bell::Task("spotify", 32 * 1024, 0, 0),
-        name_(name ? name : "ESP32 Spotify"), server_(server), port_(port) {}
+        name_(name ? name : "ESP32 Spotify"), server_(server), port_(port),
+        client_id_(client_id ? client_id : ""),
+        client_secret_(client_secret ? client_secret : "") {}
 
   bool begin() { return startTask(); }
   esp_err_t handleGet(httpd_req_t *request);
@@ -91,6 +95,8 @@ class SpotifyPlayer : public bell::Task {
   std::string name_;
   httpd_handle_t server_;
   uint16_t port_;
+  std::string client_id_;
+  std::string client_secret_;
   bell::WrappedSemaphore client_connected_{1};
   std::shared_ptr<cspot::LoginBlob> blob_;
   std::shared_ptr<cspot::SpircHandler> spirc_;
@@ -322,8 +328,8 @@ void SpotifyPlayer::runTask() {
 
     try {
       auto ctx = cspot::Context::createFromBlob(blob_);
-      ctx->config.clientId = CONFIG_SPOTIFY_CLIENT_ID;
-      ctx->config.clientSecret = CONFIG_SPOTIFY_CLIENT_SECRET;
+      ctx->config.clientId = client_id_;
+      ctx->config.clientSecret = client_secret_;
 #if CONFIG_SPOTIFY_CONNECT_BITRATE == 320
       ctx->config.audioFormat = AudioFormat_OGG_VORBIS_320;
 #elif CONFIG_SPOTIFY_CONNECT_BITRATE == 96
@@ -379,16 +385,17 @@ extern "C" esp_err_t spotify_connect_start(httpd_handle_t server,
                                              const char *device_name) {
   if (s_player) return ESP_ERR_INVALID_STATE;
   if (!server || !device_name || !device_name[0]) return ESP_ERR_INVALID_ARG;
-  if (strlen(CONFIG_SPOTIFY_CLIENT_ID) == 0 ||
-      strlen(CONFIG_SPOTIFY_CLIENT_SECRET) == 0) {
-    ESP_LOGW(TAG,
-             "Spotify disabled: set SPOTIFY_CLIENT_ID and "
-             "SPOTIFY_CLIENT_SECRET build secrets");
+  settings_spotify_t credentials = {};
+  if (settings_get_spotify(&credentials) != ESP_OK) {
+    ESP_LOGW(TAG, "Spotify disabled: add Client ID and Secret in the control panel");
     return ESP_ERR_NOT_FOUND;
   }
 
   bell::setDefaultLogger();
-  s_player = new (std::nothrow) SpotifyPlayer(device_name, server, port);
+  s_player = new (std::nothrow) SpotifyPlayer(
+      device_name, server, port, credentials.client_id,
+      credentials.client_secret);
+  memset(&credentials, 0, sizeof(credentials));
   if (!s_player) return ESP_ERR_NO_MEM;
   if (!s_player->begin()) {
     delete s_player;

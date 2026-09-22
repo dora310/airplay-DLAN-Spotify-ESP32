@@ -12,7 +12,7 @@
 
 // Fixed product name displayed in the System information panel.
 #define SETTINGS_SYSTEM_DEVICE_NAME "AirPlay and DLNA Receiver"
-#define SETTINGS_SCHEMA_VERSION 4
+#define SETTINGS_SCHEMA_VERSION 5
 
 /**
  * Initialize settings module (call once at startup)
@@ -202,6 +202,28 @@ typedef struct {
 
 esp_err_t settings_get_mqtt(settings_mqtt_t *config);
 esp_err_t settings_set_mqtt(const settings_mqtt_t *config);
+
+// ---- Spotify Connect per-device credentials ----
+
+#define SETTINGS_SPOTIFY_CLIENT_ID_LEN 129
+#define SETTINGS_SPOTIFY_CLIENT_SECRET_LEN 129
+
+typedef struct {
+  char client_id[SETTINGS_SPOTIFY_CLIENT_ID_LEN];
+  char client_secret[SETTINGS_SPOTIFY_CLIENT_SECRET_LEN];
+} settings_spotify_t;
+
+/** Read the credentials stored locally on this receiver. */
+esp_err_t settings_get_spotify(settings_spotify_t *config);
+
+/** Save a complete Client ID/Secret pair locally on this receiver. */
+esp_err_t settings_set_spotify(const settings_spotify_t *config);
+
+/** True only when both Spotify credential values are present. */
+bool settings_has_spotify_credentials(void);
+
+/** Remove both Spotify credential values from this receiver. */
+esp_err_t settings_clear_spotify(void);
 
 /** Erase all receiver settings, including Wi-Fi and the access password. */
 esp_err_t settings_factory_reset(void);
