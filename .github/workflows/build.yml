@@ -62,15 +62,28 @@ jobs:
             components/cspot_embedded/cspot/bell/external/nanopb/generator/protoc-gen-nanopb \
             components/cspot_embedded/cspot/bell/external/nanopb/generator/nanopb_generator.py
 
+      - name: Prepare protoc 3.20.3
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .ci-tools/protoc
+          mkdir -p .ci-tools/protoc
+          curl --fail --location --retry 3 \
+            --output "$RUNNER_TEMP/protoc-3.20.3.zip" \
+            https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protoc-3.20.3-linux-x86_64.zip
+          python3 -m zipfile -e \
+            "$RUNNER_TEMP/protoc-3.20.3.zip" \
+            .ci-tools/protoc
+          chmod +x .ci-tools/protoc/bin/protoc
+          .ci-tools/protoc/bin/protoc --version
+
       - name: Build ESP32-S3
         uses: espressif/esp-idf-ci-action@v1
         with:
           esp_idf_version: v5.5
           target: esp32s3
           command: >
-            python -c 'import urllib.request,zipfile; p="/tmp/protoc.zip"; urllib.request.urlretrieve("https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protoc-3.20.3-linux-x86_64.zip",p); zipfile.ZipFile(p).extractall("/tmp/protoc")' &&
-            chmod +x /tmp/protoc/bin/protoc &&
-            export PATH="/tmp/protoc/bin:$PATH" &&
+            export PATH="$PWD/.ci-tools/protoc/bin:$PATH" &&
             protoc --version &&
             python -m pip install --no-cache-dir "idf-component-manager==2.5.2" &&
             python -m pip install --no-cache-dir "protobuf==3.20.3" "setuptools<81" &&
