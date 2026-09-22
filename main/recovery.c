@@ -13,6 +13,7 @@
  * enters Safe Mode after RECOVERY_CRASH_LIMIT consecutive failures. */
 #define RECOVERY_KEY_CRASHES "crashes_v2"
 #define RECOVERY_KEY_FORCED "forced"
+#define RECOVERY_KEY_R55_MIGRATED "r55_migrated"
 #define RECOVERY_CRASH_LIMIT 3
 
 static const char *TAG = "recovery";
@@ -42,12 +43,33 @@ esp_err_t recovery_init(void) {
   nvs_handle_t nvs;
   esp_err_t err = nvs_open(RECOVERY_NAMESPACE, NVS_READWRITE, &nvs);
   if (err != ESP_OK) return err;
-  uint8_t crashes = 0, forced = 0;
-  nvs_get_u8(nvs, RECOVERY_KEY_CRASHES, &crashes);
-  nvs_get_u8(nvs, RECOVERY_KEY_FORCED, &forced);
-  if (is_crash_reset(s_status.reset_reason) && crashes < UINT8_MAX) crashes++;
-  else if (!is_crash_reset(s_status.reset_reason) && !forced) crashes = 0;
-  err = nvs_set_u8(nvs, RECOVERY_KEY_CRASHES, crashes);
+  uint8_t crashes = 0, forced = 0, migrated = 0;
+  nvs_get_u8(nvs, RECOVERY_KEY_R55_MIGRATED, &migrated);
+
+  if (!migrated) {
+    /* R51-R54 could leave the independent `forced` flag set while users were
+     * trying to escape the reboot loop. Clear both recovery inputs exactly
+     * once after installing this stability build. The migration marker is
+     * committed with the cleared values, so future genuine crashes continue
+     * to accumulate and still enter Safe Mode normally. */
+    crashes = 0;
+    forced = 0;
+    err = nvs_set_u8(nvs, RECOVERY_KEY_CRASHES, 0);
+    if (err == ESP_OK) err = nvs_set_u8(nvs, RECOVERY_KEY_FORCED, 0);
+    if (err == ESP_OK) err = nvs_set_u8(nvs, RECOVERY_KEY_R55_MIGRATED, 1);
+    if (err == ESP_OK) {
+      ESP_LOGW(TAG, "R55 recovery migration: cleared legacy Safe Mode flags");
+    }
+  } else {
+    nvs_get_u8(nvs, RECOVERY_KEY_CRASHES, &crashes);
+    nvs_get_u8(nvs, RECOVERY_KEY_FORCED, &forced);
+    if (is_crash_reset(s_status.reset_reason) && crashes < UINT8_MAX) {
+      crashes++;
+    } else if (!is_crash_reset(s_status.reset_reason) && !forced) {
+      crashes = 0;
+    }
+    err = nvs_set_u8(nvs, RECOVERY_KEY_CRASHES, crashes);
+  }
   if (err == ESP_OK) err = nvs_commit(nvs);
   nvs_close(nvs);
   if (err != ESP_OK) return err;
