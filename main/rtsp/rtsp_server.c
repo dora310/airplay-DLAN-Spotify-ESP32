@@ -345,7 +345,9 @@ cleanup:
   // When being replaced by a new client (is_old), skip global state changes —
   // the new session's SETUP already manages PTP and the event port task.
   if (!slot->is_old) {
+#ifndef CONFIG_AIRPLAY_FORCE_V1
     ptp_clock_init(); // Restart PTP (stopped during v1 SETUP to free sockets)
+#endif
     rtsp_stop_event_port_task();
   } else if (rtsp_event_port_listen_socket() >= 0 &&
              rtsp_event_port_listen_socket() == conn->event_socket) {
