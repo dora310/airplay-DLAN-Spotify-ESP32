@@ -82,4 +82,7 @@ CONFIG_AUDIO_DECODER_AMRWB_SUPPORT=y
 CONFIG_AUDIO_SIMPLE_DEC_WAV_SUPPORT=y
 CONFIG_AUDIO_SIMPLE_DEC_M4A_SUPPORT=y
 CONFIG_AUDIO_SIMPLE_DEC_OGG_SUPPORT=y
+# Stability fallback for ESP32-S3: classic RAOP avoids the idle AirPlay 2 PTP
+# listener that was active immediately before the observed panic/reset loop.
+CONFIG_AIRPLAY_FORCE_V1=y
 CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE=y
