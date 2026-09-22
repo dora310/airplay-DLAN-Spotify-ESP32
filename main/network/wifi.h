@@ -77,6 +77,9 @@ typedef struct {
 
 void wifi_get_diagnostics(wifi_diagnostics_t *diagnostics);
 
+/** Monotonic link-loss counter used to recover services after quick drops. */
+uint32_t wifi_get_disconnect_count(void);
+
 /** Non-disruptive scan and credential-format validation before staging. */
 esp_err_t wifi_check_credentials(const char *ssid, const char *password,
                                  wifi_credential_check_t *result);

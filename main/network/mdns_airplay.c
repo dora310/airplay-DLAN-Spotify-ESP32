@@ -1,6 +1,7 @@
 #include "esp_log.h"
 #include "esp_mac.h"
 #include "mdns.h"
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -11,6 +12,7 @@
 #include "settings.h"
 
 static const char *TAG = "mdns_airplay";
+static bool s_mdns_ready = false;
 
 // Feature flags are defined in rtsp_handlers.h (shared with /info handler)
 
@@ -39,7 +41,10 @@ static const char *TAG = "mdns_airplay";
 // AppleTV3,2 = Apple TV, AudioAccessory5,1 = HomePod mini (speaker)
 #define AIRPLAY_MODEL "AudioAccessory5,1"
 
-void mdns_airplay_init(void) {
+esp_err_t mdns_airplay_init(void) {
+  if (s_mdns_ready) {
+    return ESP_ERR_INVALID_STATE;
+  }
   char mac_str[18];
   char device_id[18];
   char features_str[32];
@@ -70,11 +75,24 @@ void mdns_airplay_init(void) {
   snprintf(service_name, sizeof(service_name), "%02X%02X%02X%02X%02X%02X@%s",
            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], device_name);
 
-  // Initialize mDNS
-  ESP_ERROR_CHECK(mdns_init());
+  // Optional network services must not reboot the receiver when mDNS cannot
+  // allocate memory or an interface is changing.
+  esp_err_t init_err = mdns_init();
+  if (init_err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to initialize mDNS: %s",
+             esp_err_to_name(init_err));
+    return init_err;
+  }
+  s_mdns_ready = true;
 
   // Set hostname
-  ESP_ERROR_CHECK(mdns_hostname_set(device_name));
+  esp_err_t hostname_err = mdns_hostname_set(device_name);
+  if (hostname_err != ESP_OK) {
+    ESP_LOGE(TAG, "Failed to set mDNS hostname: %s",
+             esp_err_to_name(hostname_err));
+    mdns_airplay_stop();
+    return hostname_err;
+  }
 
 #ifndef CONFIG_AIRPLAY_FORCE_V1
   // ========================================
@@ -99,6 +117,8 @@ void mdns_airplay_init(void) {
   if (err != ESP_OK) {
     ESP_LOGE(TAG, "Failed to add _airplay._tcp service: %s",
              esp_err_to_name(err));
+    mdns_airplay_stop();
+    return err;
   }
 #endif
 
@@ -153,5 +173,24 @@ void mdns_airplay_init(void) {
   if (err_raop != ESP_OK) {
     ESP_LOGE(TAG, "Failed to add _raop._tcp service: %s",
              esp_err_to_name(err_raop));
+    mdns_airplay_stop();
+    return err_raop;
   }
+
+  ESP_LOGI(TAG, "AirPlay mDNS advertisements ready");
+  return ESP_OK;
+}
+
+void mdns_airplay_stop(void) {
+  if (!s_mdns_ready) {
+    return;
+  }
+  mdns_free();
+  s_mdns_ready = false;
+}
+
+esp_err_t mdns_airplay_refresh(void) {
+  ESP_LOGI(TAG, "Refreshing AirPlay mDNS advertisements");
+  mdns_airplay_stop();
+  return mdns_airplay_init();
 }

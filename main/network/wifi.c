@@ -703,6 +703,8 @@ void wifi_get_diagnostics(wifi_diagnostics_t *diagnostics) {
   wifi_get_ip_str(diagnostics->ip, sizeof(diagnostics->ip));
 }
 
+uint32_t wifi_get_disconnect_count(void) { return s_disconnect_count; }
+
 void wifi_stop(void) {
   if (s_wifi_initialized) {
     esp_timer_stop(s_retry_timer);
