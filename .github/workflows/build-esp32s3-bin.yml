@@ -63,7 +63,8 @@ jobs:
         run: |
           chmod +x \
             components/cspot_embedded/cspot/bell/external/nanopb/generator/protoc \
-            components/cspot_embedded/cspot/bell/external/nanopb/generator/protoc-gen-nanopb
+            components/cspot_embedded/cspot/bell/external/nanopb/generator/protoc-gen-nanopb \
+            components/cspot_embedded/cspot/bell/external/nanopb/generator/nanopb_generator.py
 
       - name: Build with ESP-IDF 5.5
         uses: espressif/esp-idf-ci-action@v1
