@@ -93,6 +93,7 @@ if(CONFIG_SPOTIFY_CONNECT_ENABLE)
         "${PROJECT_DIR}/components/cspot_embedded/cspot/include"
         "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/main/utilities/include"
         "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/main/platform"
+        "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/main/io/include"
         "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/external/nanopb"
         "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/external/nlohmann_json/include"
         "${PROJECT_DIR}/components/cspot_embedded/cspot/bell/external/tremor"
@@ -124,6 +125,7 @@ set( DEPS
     spiffs_storage
     esp_audio_codec
     mqtt
+    pthread
 )
 
 if(CONFIG_SPOTIFY_CONNECT_ENABLE)
