@@ -1,0 +1,96 @@
+name: Build
+
+# Reusable ESP32-S3 firmware build used by ci.yml and release.yml.
+on:
+  workflow_call:
+    secrets:
+      SPOTIFY_CLIENT_ID:
+        required: false
+      SPOTIFY_CLIENT_SECRET:
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: esp32s3
+            target: esp32s3
+            sdkconfig: "sdkconfig.defaults;sdkconfig.defaults.esp32s3"
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          submodules: "recursive"
+
+      - name: Read firmware version
+        id: firmware_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < version.txt)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::version.txt must contain MAJOR.MINOR.PATCH, got '$version'"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare private Spotify test credentials
+        shell: bash
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          : > sdkconfig.spotify
+          if [[ -n "${SPOTIFY_CLIENT_ID}" && -n "${SPOTIFY_CLIENT_SECRET}" ]]; then
+            [[ "${SPOTIFY_CLIENT_ID}" =~ ^[A-Za-z0-9]+$ ]]
+            [[ "${SPOTIFY_CLIENT_SECRET}" =~ ^[A-Za-z0-9]+$ ]]
+            printf 'CONFIG_SPOTIFY_CLIENT_ID="%s"\n' "${SPOTIFY_CLIENT_ID}" >> sdkconfig.spotify
+            printf 'CONFIG_SPOTIFY_CLIENT_SECRET="%s"\n' "${SPOTIFY_CLIENT_SECRET}" >> sdkconfig.spotify
+          else
+            echo "::warning::Spotify secrets are missing; Spotify Connect will stay disabled at runtime."
+          fi
+
+      - name: Restore cspot generator permissions
+        shell: bash
+        run: |
+          chmod +x \
+            components/cspot_embedded/cspot/bell/external/nanopb/generator/protoc \
+            components/cspot_embedded/cspot/bell/external/nanopb/generator/protoc-gen-nanopb \
+            components/cspot_embedded/cspot/bell/external/nanopb/generator/nanopb_generator.py
+
+      - name: Build ESP32-S3
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32s3
+          command: >
+            python -c 'import urllib.request,zipfile; p="/tmp/protoc.zip"; urllib.request.urlretrieve("https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protoc-3.20.3-linux-x86_64.zip",p); zipfile.ZipFile(p).extractall("/tmp/protoc")' &&
+            chmod +x /tmp/protoc/bin/protoc &&
+            export PATH="/tmp/protoc/bin:$PATH" &&
+            protoc --version &&
+            python -m pip install --no-cache-dir "idf-component-manager==2.5.2" &&
+            python -m pip install --no-cache-dir "protobuf==3.20.3" "setuptools<81" &&
+            rm -f sdkconfig sdkconfig.old dependencies.lock &&
+            rm -rf build managed_components &&
+            IDF_PY_BUILD_JOBS=2 idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32s3;sdkconfig.spotify" build &&
+            cp build/airplay2-receiver.bin
+            airplay2-receiver-esp32s3-v${{ steps.firmware_version.outputs.version }}-ota.bin &&
+            cd build &&
+            esptool.py --chip esp32s3 merge_bin --format raw
+            -o merged-firmware.bin $(cat flash_args) &&
+            cp merged-firmware.bin
+            ../airplay2-receiver-esp32s3-v${{ steps.firmware_version.outputs.version }}-install.bin
+
+      - name: Upload ESP32-S3 firmware artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: firmware-esp32s3
+          path: |
+            airplay2-receiver-esp32s3-v${{ steps.firmware_version.outputs.version }}-install.bin
+            airplay2-receiver-esp32s3-v${{ steps.firmware_version.outputs.version }}-ota.bin
+          if-no-files-found: error
+          retention-days: 30
