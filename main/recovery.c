@@ -1,4 +1,5 @@
 #include "recovery.h"
+#include "settings.h"
 
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -13,7 +14,7 @@
  * enters Safe Mode after RECOVERY_CRASH_LIMIT consecutive failures. */
 #define RECOVERY_KEY_CRASHES "crashes_v2"
 #define RECOVERY_KEY_FORCED "forced"
-#define RECOVERY_KEY_R55_MIGRATED "r55_migrated"
+#define RECOVERY_KEY_R56_MIGRATED "r56_migrated"
 #define RECOVERY_CRASH_LIMIT 3
 
 static const char *TAG = "recovery";
@@ -44,21 +45,24 @@ esp_err_t recovery_init(void) {
   esp_err_t err = nvs_open(RECOVERY_NAMESPACE, NVS_READWRITE, &nvs);
   if (err != ESP_OK) return err;
   uint8_t crashes = 0, forced = 0, migrated = 0;
-  nvs_get_u8(nvs, RECOVERY_KEY_R55_MIGRATED, &migrated);
+  nvs_get_u8(nvs, RECOVERY_KEY_R56_MIGRATED, &migrated);
 
   if (!migrated) {
-    /* R51-R54 could leave the independent `forced` flag set while users were
+    /* Older builds could leave the independent `forced` flag set while users were
      * trying to escape the reboot loop. Clear both recovery inputs exactly
-     * once after installing this stability build. The migration marker is
+     * once and remove the stale control-panel password after installing this
+     * recovery build. The migration marker is
      * committed with the cleared values, so future genuine crashes continue
      * to accumulate and still enter Safe Mode normally. */
     crashes = 0;
     forced = 0;
     err = nvs_set_u8(nvs, RECOVERY_KEY_CRASHES, 0);
     if (err == ESP_OK) err = nvs_set_u8(nvs, RECOVERY_KEY_FORCED, 0);
-    if (err == ESP_OK) err = nvs_set_u8(nvs, RECOVERY_KEY_R55_MIGRATED, 1);
+    if (err == ESP_OK) err = settings_set_web_password("");
+    if (err == ESP_OK) err = nvs_set_u8(nvs, RECOVERY_KEY_R56_MIGRATED, 1);
     if (err == ESP_OK) {
-      ESP_LOGW(TAG, "R55 recovery migration: cleared legacy Safe Mode flags");
+      ESP_LOGW(TAG,
+               "R56 recovery migration: cleared Safe Mode and panel password");
     }
   } else {
     nvs_get_u8(nvs, RECOVERY_KEY_CRASHES, &crashes);
