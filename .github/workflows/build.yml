@@ -74,7 +74,7 @@ jobs:
             python -m pip install --no-cache-dir "protobuf==3.20.3" "setuptools<81" &&
             rm -f sdkconfig sdkconfig.old dependencies.lock &&
             rm -rf build managed_components &&
-            idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32s3;sdkconfig.spotify" build &&
+            idf.py -j 2 -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32s3;sdkconfig.spotify" build &&
             cp build/airplay2-receiver.bin
             airplay2-receiver-esp32s3-v${{ steps.firmware_version.outputs.version }}-ota.bin &&
             cd build &&
