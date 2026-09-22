@@ -68,8 +68,10 @@ jobs:
           esp_idf_version: v5.5
           target: esp32s3
           command: >
-            apt-get update &&
-            apt-get install -y --no-install-recommends protobuf-compiler &&
+            python -c 'import urllib.request,zipfile; p="/tmp/protoc.zip"; urllib.request.urlretrieve("https://github.com/protocolbuffers/protobuf/releases/download/v3.20.3/protoc-3.20.3-linux-x86_64.zip",p); zipfile.ZipFile(p).extractall("/tmp/protoc")' &&
+            chmod +x /tmp/protoc/bin/protoc &&
+            export PATH="/tmp/protoc/bin:$PATH" &&
+            protoc --version &&
             python -m pip install --no-cache-dir "idf-component-manager==2.5.2" &&
             python -m pip install --no-cache-dir "protobuf==3.20.3" "setuptools<81" &&
             rm -f sdkconfig sdkconfig.old dependencies.lock &&
