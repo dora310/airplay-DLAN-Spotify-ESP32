@@ -33,6 +33,13 @@ jobs:
         with:
           submodules: "recursive"
 
+      - name: Restore cspot generator permissions
+        shell: bash
+        run: |
+          chmod +x \
+            components/cspot_embedded/cspot/bell/external/nanopb/generator/protoc \
+            components/cspot_embedded/cspot/bell/external/nanopb/generator/protoc-gen-nanopb
+
       - name: Build and generate compile_commands.json
         uses: espressif/esp-idf-ci-action@v1
         with:
