@@ -3,11 +3,6 @@ name: Build
 # Reusable ESP32-S3 firmware build used by ci.yml and release.yml.
 on:
   workflow_call:
-    secrets:
-      SPOTIFY_CLIENT_ID:
-        required: false
-      SPOTIFY_CLIENT_SECRET:
-        required: false
 
 jobs:
   build:
@@ -36,23 +31,6 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
-
-      - name: Prepare private Spotify test credentials
-        shell: bash
-        env:
-          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
-          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
-        run: |
-          set -euo pipefail
-          : > sdkconfig.spotify
-          if [[ -n "${SPOTIFY_CLIENT_ID}" && -n "${SPOTIFY_CLIENT_SECRET}" ]]; then
-            [[ "${SPOTIFY_CLIENT_ID}" =~ ^[A-Za-z0-9]+$ ]]
-            [[ "${SPOTIFY_CLIENT_SECRET}" =~ ^[A-Za-z0-9]+$ ]]
-            printf 'CONFIG_SPOTIFY_CLIENT_ID="%s"\n' "${SPOTIFY_CLIENT_ID}" >> sdkconfig.spotify
-            printf 'CONFIG_SPOTIFY_CLIENT_SECRET="%s"\n' "${SPOTIFY_CLIENT_SECRET}" >> sdkconfig.spotify
-          else
-            echo "::warning::Spotify secrets are missing; Spotify Connect will stay disabled at runtime."
-          fi
 
       - name: Restore cspot generator permissions
         shell: bash
@@ -89,7 +67,7 @@ jobs:
             python -m pip install --no-cache-dir "protobuf==3.20.3" "setuptools<81" &&
             rm -f sdkconfig sdkconfig.old dependencies.lock &&
             rm -rf build managed_components &&
-            IDF_PY_BUILD_JOBS=2 idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32s3;sdkconfig.spotify" build &&
+            IDF_PY_BUILD_JOBS=2 idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.defaults.esp32s3" build &&
             cp build/airplay2-receiver.bin
             airplay2-receiver-esp32s3-v${{ steps.firmware_version.outputs.version }}-ota.bin &&
             cd build &&
