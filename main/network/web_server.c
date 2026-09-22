@@ -35,11 +35,9 @@ static httpd_handle_t s_server = NULL;
 #define SPIFFS_CHUNK_SIZE 1024
 
 static bool web_authorized(httpd_req_t *req) {
-  if (!settings_web_password_is_set())
-    return true;
+  if (!settings_web_password_is_set()) return true;
   size_t len = httpd_req_get_hdr_value_len(req, "X-API-Key");
-  if (!len || len > 64)
-    return false;
+  if (!len || len > 64) return false;
   char key[65];
   return httpd_req_get_hdr_value_str(req, "X-API-Key", key, sizeof(key)) ==
              ESP_OK &&
@@ -47,12 +45,11 @@ static bool web_authorized(httpd_req_t *req) {
 }
 
 static bool reject_unauthorized(httpd_req_t *req) {
-  if (web_authorized(req))
-    return false;
+  if (web_authorized(req)) return false;
   httpd_resp_set_status(req, "401 Unauthorized");
   httpd_resp_set_type(req, "application/json");
   httpd_resp_sendstr(req,
-                     "{\"success\":false,\"error\":\"X-API-Key required\"}");
+      "{\"success\":false,\"error\":\"X-API-Key required\"}");
   return true;
 }
 
@@ -194,7 +191,8 @@ static esp_err_t speedtest_upload_handler(httpd_req_t *req) {
 static esp_err_t captive_portal_redirect(httpd_req_t *req) {
   // Redirect to the configuration page
   httpd_resp_set_status(req, "302 Found");
-  httpd_resp_set_hdr(req, "Location", "http://" WIFI_PROVISIONING_IP_STR "/");
+  httpd_resp_set_hdr(req, "Location",
+                     "http://" WIFI_PROVISIONING_IP_STR "/");
   httpd_resp_send(req, NULL, 0);
   return ESP_OK;
 }
@@ -250,8 +248,7 @@ static esp_err_t wifi_scan_handler(httpd_req_t *req) {
 }
 
 static esp_err_t wifi_config_handler(httpd_req_t *req) {
-  if (reject_unauthorized(req))
-    return ESP_OK;
+  if (reject_unauthorized(req)) return ESP_OK;
   char content[512];
   int ret = httpd_req_recv(req, content, sizeof(content) - 1);
   if (ret <= 0) {
@@ -303,8 +300,7 @@ static esp_err_t wifi_config_handler(httpd_req_t *req) {
 }
 
 static esp_err_t device_name_handler(httpd_req_t *req) {
-  if (reject_unauthorized(req))
-    return ESP_OK;
+  if (reject_unauthorized(req)) return ESP_OK;
   char content[256];
   int ret = httpd_req_recv(req, content, sizeof(content) - 1);
   if (ret <= 0) {
@@ -361,8 +357,7 @@ static esp_err_t led_brightness_get_handler(httpd_req_t *req) {
 }
 
 static esp_err_t led_brightness_post_handler(httpd_req_t *req) {
-  if (reject_unauthorized(req))
-    return ESP_OK;
+  if (reject_unauthorized(req)) return ESP_OK;
   char content[64];
   int ret = httpd_req_recv(req, content, sizeof(content) - 1);
   if (ret <= 0) {
@@ -410,8 +405,7 @@ static esp_err_t led_brightness_post_handler(httpd_req_t *req) {
 }
 
 static esp_err_t ota_update_handler(httpd_req_t *req) {
-  if (reject_unauthorized(req))
-    return ESP_OK;
+  if (reject_unauthorized(req)) return ESP_OK;
   if (req->content_len == 0) {
     httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "No firmware uploaded");
     return ESP_FAIL;
@@ -462,7 +456,8 @@ static esp_err_t system_info_handler(httpd_req_t *req) {
     wifi_get_ip_str(ip_str, sizeof(ip_str));
     wifi_get_mac_str(mac_str, sizeof(mac_str));
   }
-  settings_get_device_name(airplay_device_name, sizeof(airplay_device_name));
+  settings_get_device_name(airplay_device_name,
+                           sizeof(airplay_device_name));
 
   cJSON_AddStringToObject(info, "ip", ip_str);
   cJSON_AddStringToObject(info, "mac", mac_str);
@@ -526,8 +521,7 @@ static esp_err_t system_info_handler(httpd_req_t *req) {
 }
 
 static esp_err_t system_restart_handler(httpd_req_t *req) {
-  if (reject_unauthorized(req))
-    return ESP_OK;
+  if (reject_unauthorized(req)) return ESP_OK;
   cJSON *json = cJSON_CreateObject();
   cJSON_AddBoolToObject(json, "success", true);
 
@@ -566,8 +560,7 @@ static bool is_path_allowed(const char *path) {
 }
 
 static esp_err_t fs_upload_handler(httpd_req_t *req) {
-  if (reject_unauthorized(req))
-    return ESP_OK;
+  if (reject_unauthorized(req)) return ESP_OK;
   // Get target path from query string
   char query[128] = {0};
   char path[64] = {0};
@@ -629,8 +622,7 @@ static esp_err_t fs_upload_handler(httpd_req_t *req) {
 }
 
 static esp_err_t fs_delete_handler(httpd_req_t *req) {
-  if (reject_unauthorized(req))
-    return ESP_OK;
+  if (reject_unauthorized(req)) return ESP_OK;
   char query[128] = {0};
   char path[64] = {0};
 
@@ -748,8 +740,7 @@ static esp_err_t eq_get_handler(httpd_req_t *req) {
 }
 
 static esp_err_t eq_post_handler(httpd_req_t *req) {
-  if (reject_unauthorized(req))
-    return ESP_OK;
+  if (reject_unauthorized(req)) return ESP_OK;
   char content[512];
   int ret = httpd_req_recv(req, content, sizeof(content) - 1);
   if (ret <= 0) {
@@ -851,8 +842,9 @@ esp_err_t web_server_start(uint16_t port) {
                                     .handler = speedtest_page_handler};
   httpd_register_uri_handler(s_server, &speedtest_page_uri);
 
-  httpd_uri_t advanced_page_uri = {
-      .uri = "/advanced", .method = HTTP_GET, .handler = advanced_page_handler};
+  httpd_uri_t advanced_page_uri = {.uri = "/advanced",
+                                    .method = HTTP_GET,
+                                    .handler = advanced_page_handler};
   httpd_register_uri_handler(s_server, &advanced_page_uri);
 
   httpd_uri_t reliability_page_uri = {.uri = "/reliability",
